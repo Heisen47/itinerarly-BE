@@ -11,4 +11,9 @@ public class home {
     public ResponseEntity<String> test() {
         return ResponseEntity.ok("Hello World");
     }
+
+    @GetMapping("/start")
+    public ResponseEntity<String> start() {
+        return ResponseEntity.ok("Itinerarly BE is running");
+    }
 }
