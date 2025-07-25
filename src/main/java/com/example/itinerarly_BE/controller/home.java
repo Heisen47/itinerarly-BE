@@ -12,7 +12,7 @@ public class home {
         return ResponseEntity.ok("Hello World");
     }
 
-    @GetMapping("/start")
+    @GetMapping("/api/v1/start")
     public ResponseEntity<String> start() {
         return ResponseEntity.ok("Itinerarly BE is running");
     }

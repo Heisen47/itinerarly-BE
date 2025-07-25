@@ -18,6 +18,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/").permitAll();
                     auth.requestMatchers("/favicon.ico").permitAll();
+                    auth.requestMatchers("/swagger-ui").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .oauth2Login(withDefaults())
