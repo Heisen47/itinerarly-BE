@@ -16,19 +16,5 @@ public class home {
         return ResponseEntity.ok("Hello World");
     }
 
-    @GetMapping("/api/v1/start")
-    public ResponseEntity<String> start() {
-        return ResponseEntity.ok("Itinerarly BE is running");
-    }
 
-    @PostMapping("/logout")
-    public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
-        request.getSession().invalidate();
-        Cookie cookie = new Cookie("auth_token", null);
-        cookie.setPath("/");
-        cookie.setHttpOnly(true);
-        cookie.setMaxAge(0);
-        response.addCookie(cookie);
-        return ResponseEntity.ok().build();
-    }
 }

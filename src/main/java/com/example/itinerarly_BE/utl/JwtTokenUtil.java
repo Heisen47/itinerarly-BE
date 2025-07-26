@@ -2,7 +2,6 @@ package com.example.itinerarly_BE.utl;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
@@ -23,7 +22,7 @@ public class JwtTokenUtil {
         if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
             username = userDetails.getUsername();
         } else if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User oAuth2User) {
-            username = oAuth2User.getAttribute("login"); // or "email" or another unique attribute
+            username = oAuth2User.getAttribute("login");
         } else {
             throw new IllegalArgumentException("Unknown principal type: " + principal.getClass());
         }
@@ -34,5 +33,15 @@ public class JwtTokenUtil {
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
+    }
+
+    public boolean validateToken(String token) {
+        try {
+            Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
+            return true;
+        } catch (Exception e) {
+            System.out.println("JWT Token validation failed: " + e.getMessage());
+            return false;
+        }
     }
 }
