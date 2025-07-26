@@ -23,7 +23,7 @@ public class auth {
         return ResponseEntity.ok("Itinerarly BE is running");
     }
 
-    @PostMapping("/logout")
+    @PostMapping("/api/v1/logout")
     public ResponseEntity<?> logout(HttpServletRequest request, HttpServletResponse response) {
         request.getSession().invalidate();
         Cookie cookie = new Cookie("auth-token", null);

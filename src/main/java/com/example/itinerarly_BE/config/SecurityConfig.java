@@ -28,9 +28,10 @@ public class SecurityConfig {
         http
                 .cors().and()
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui", "/oauth2/authorization/**").permitAll();
+                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui", "/oauth2/authorization/**" ).permitAll();
                     auth.anyRequest().authenticated();
                 })
+                .logout(logout -> logout.disable())
                 .oauth2Login(oauth2 -> oauth2
                         .successHandler(oAuth2SuccessHandler())
                         .failureHandler(oAuth2FailureHandler())
@@ -43,7 +44,8 @@ public class SecurityConfig {
             try {
                 String jwt = jwtTokenUtil.generateToken(authentication);
                 Cookie cookie = new Cookie("auth-token", jwt);
-                cookie.setHttpOnly(true);
+               //cookie.setHttpOnly(true);  //For prod
+                cookie.setHttpOnly(false);  //For Dev
                 cookie.setPath("/");
                 cookie.setMaxAge(86400);
                 response.addCookie(cookie);
