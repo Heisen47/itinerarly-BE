@@ -28,7 +28,7 @@ public class SecurityConfig {
         http
                 .cors().and()
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui", "/oauth2/authorization/**" ).permitAll();
+                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui", "/oauth2/authorization/**").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .logout(logout -> logout.disable())
