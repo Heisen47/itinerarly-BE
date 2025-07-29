@@ -2,11 +2,14 @@ package com.example.itinerarly_BE.utl;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.stereotype.Component;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.SignatureAlgorithm;
 
 import java.util.Date;
+import java.util.HashMap;
+import java.util.Map;
 
 @Component
 public class JwtTokenUtil {
@@ -18,23 +21,30 @@ public class JwtTokenUtil {
 
     public String generateToken(Authentication authentication) {
         Object principal = authentication.getPrincipal();
-        String username;
-        if (principal instanceof org.springframework.security.core.userdetails.UserDetails userDetails) {
-            username = userDetails.getUsername();
-        } else if (principal instanceof org.springframework.security.oauth2.core.user.OAuth2User oAuth2User) {
-            username = oAuth2User.getAttribute("login");
-        } else {
-            throw new IllegalArgumentException("Unknown principal type: " + principal.getClass());
+        Map<String, Object> claims = new HashMap<>();
+
+        if (principal instanceof OAuth2User oauth2User) {
+            claims.put("name", oauth2User.getAttribute("name"));
+            claims.put("email", oauth2User.getAttribute("email"));
+            claims.put("login", oauth2User.getAttribute("login"));
+            claims.put("id", oauth2User.getAttribute("id"));
+            claims.put("avatar", oauth2User.getAttribute("avatar_url"));
         }
 
         return Jwts.builder()
-                .setSubject(username)
+                .setClaims(claims)
                 .setIssuedAt(new Date())
                 .setExpiration(new Date((new Date()).getTime() + jwtExpirationMs))
                 .signWith(SignatureAlgorithm.HS512, jwtSecret)
                 .compact();
     }
 
+    public Map<String, Object> getClaimsFromToken(String token) {
+        return Jwts.parser()
+                .setSigningKey(jwtSecret)
+                .parseClaimsJws(token)
+                .getBody();
+    }
     public boolean validateToken(String token) {
         try {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
