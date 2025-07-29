@@ -13,6 +13,7 @@ import org.springframework.security.config.annotation.web.configuration.EnableWe
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
+import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 
 import java.io.IOException;
 
@@ -26,9 +27,13 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
         http
-                .cors().and()
+                .cors(cors -> cors.configure(http))
+                .csrf(csrf -> csrf
+                        .ignoringRequestMatchers("/api/v1/logout", "/api/**")
+                        .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
+                )
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui", "/oauth2/authorization/**").permitAll();
+                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui", "/oauth2/authorization/**", "/api/v1/logout").permitAll();
                     auth.anyRequest().authenticated();
                 })
                 .logout(logout -> logout.disable())
