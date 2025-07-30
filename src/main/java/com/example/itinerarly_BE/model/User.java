@@ -4,6 +4,8 @@ import jakarta.persistence.*;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
+import java.time.LocalDate;
+
 @Entity
 @Table(name = "users")
 @Data
@@ -19,5 +21,12 @@ public class User {
     private String username;
     private String avatarUrl;
     private String provider;
+
+
+    @Column(name = "daily_tokens")
+    private Integer dailyTokens ;
+
+    @Column(name = "last_token_refresh")
+    private LocalDate lastTokenRefresh = LocalDate.now();
 
 }

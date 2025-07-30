@@ -24,9 +24,17 @@ public class UserController {
         }
 
         try {
-            String oauthId = oauth2User.getAttribute("sub");
-            if (oauthId == null) {
-                oauthId = oauth2User.getAttribute("id");
+            String oauthId = null;
+
+            Object subAttribute = oauth2User.getAttribute("sub");
+
+            if (subAttribute != null) {
+                oauthId = subAttribute.toString();
+            } else {
+                Object idAttribute = oauth2User.getAttribute("id");
+                if (idAttribute != null) {
+                    oauthId = idAttribute.toString();
+                }
             }
 
             if (oauthId == null) {

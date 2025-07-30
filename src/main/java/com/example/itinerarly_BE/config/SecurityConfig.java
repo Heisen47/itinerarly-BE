@@ -4,7 +4,6 @@ import com.example.itinerarly_BE.model.User;
 import com.example.itinerarly_BE.repository.UserRepository;
 import com.example.itinerarly_BE.utl.JwtTokenUtil;
 import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
@@ -17,8 +16,7 @@ import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
-
-import java.io.IOException;
+import java.time.LocalDate;
 
 @Configuration
 @EnableWebSecurity
@@ -32,6 +30,9 @@ public class SecurityConfig {
         this.jwtTokenUtil = jwtTokenUtil;
         this.userRepository = userRepository;
     }
+
+    @Autowired
+    private TokenConfig tokenConfig;
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -59,16 +60,14 @@ public class SecurityConfig {
             try {
                 OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
 
-                // Extract user info
                 String oauthId = oauth2User.getAttribute("sub") != null ?
                         oauth2User.getAttribute("sub").toString() :
                         oauth2User.getAttribute("id").toString();
 
-                // Find existing user or create new one
                 User user = userRepository.findByOauthId(oauthId)
                         .orElse(new User());
 
-                // Update user data
+                // Set user data
                 user.setOauthId(oauthId);
                 user.setEmail(oauth2User.getAttribute("email"));
                 user.setName(oauth2User.getAttribute("name"));
@@ -76,14 +75,17 @@ public class SecurityConfig {
                 user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
                 user.setProvider(oauth2User.getAttribute("iss") != null ? "google" : "github");
 
-                // Save user
-                userRepository.save(user);
+                // Initialize tokens for new users
+                if (user.getId() == null) {
+                    user.setDailyTokens(tokenConfig.getDailyTokenLimit());
+                    user.setLastTokenRefresh(LocalDate.now());
+                }
 
+                userRepository.save(user);
 
                 String jwt = jwtTokenUtil.generateToken(authentication);
                 Cookie cookie = new Cookie("auth-token", jwt);
-               //cookie.setHttpOnly(true);  //For prod
-                cookie.setHttpOnly(false);  //For Dev
+                cookie.setHttpOnly(false);
                 cookie.setPath("/");
                 cookie.setMaxAge(86400);
                 response.addCookie(cookie);
