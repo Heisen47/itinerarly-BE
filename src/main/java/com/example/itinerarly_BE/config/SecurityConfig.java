@@ -1,5 +1,7 @@
 package com.example.itinerarly_BE.config;
 
+import com.example.itinerarly_BE.model.User;
+import com.example.itinerarly_BE.repository.UserRepository;
 import com.example.itinerarly_BE.utl.JwtTokenUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletRequest;
@@ -10,6 +12,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
+import org.springframework.security.oauth2.core.user.OAuth2User;
 import org.springframework.security.web.SecurityFilterChain;
 import org.springframework.security.web.authentication.AuthenticationFailureHandler;
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
@@ -21,8 +24,14 @@ import java.io.IOException;
 @EnableWebSecurity
 public class SecurityConfig {
 
+    private final JwtTokenUtil jwtTokenUtil;
+    private final UserRepository userRepository;
+
     @Autowired
-    private JwtTokenUtil jwtTokenUtil;
+    public SecurityConfig(JwtTokenUtil jwtTokenUtil, UserRepository userRepository) {
+        this.jwtTokenUtil = jwtTokenUtil;
+        this.userRepository = userRepository;
+    }
 
     @Bean
     public SecurityFilterChain securityFilterChain(HttpSecurity http) throws Exception {
@@ -33,7 +42,8 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui", "/oauth2/authorization/**", "/api/v1/logout").permitAll();
+                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui/**", "/v3/api-docs/**", "/oauth2/authorization/**", "/api/v1/start").permitAll();
+                    auth.requestMatchers("/api/**").authenticated();
                     auth.anyRequest().authenticated();
                 })
                 .logout(logout -> logout.disable())
@@ -47,6 +57,29 @@ public class SecurityConfig {
     private AuthenticationSuccessHandler oAuth2SuccessHandler() {
         return (request, response, authentication) -> {
             try {
+                OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
+
+                // Extract user info
+                String oauthId = oauth2User.getAttribute("sub") != null ?
+                        oauth2User.getAttribute("sub").toString() :
+                        oauth2User.getAttribute("id").toString();
+
+                // Find existing user or create new one
+                User user = userRepository.findByOauthId(oauthId)
+                        .orElse(new User());
+
+                // Update user data
+                user.setOauthId(oauthId);
+                user.setEmail(oauth2User.getAttribute("email"));
+                user.setName(oauth2User.getAttribute("name"));
+                user.setUsername(oauth2User.getAttribute("login"));
+                user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
+                user.setProvider(oauth2User.getAttribute("iss") != null ? "google" : "github");
+
+                // Save user
+                userRepository.save(user);
+
+
                 String jwt = jwtTokenUtil.generateToken(authentication);
                 Cookie cookie = new Cookie("auth-token", jwt);
                //cookie.setHttpOnly(true);  //For prod
