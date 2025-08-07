@@ -17,6 +17,8 @@ import org.springframework.security.web.authentication.AuthenticationFailureHand
 import org.springframework.security.web.authentication.AuthenticationSuccessHandler;
 import org.springframework.security.web.csrf.CookieCsrfTokenRepository;
 import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Configuration
 @EnableWebSecurity
@@ -60,25 +62,64 @@ public class SecurityConfig {
             try {
                 OAuth2User oauth2User = (OAuth2User) authentication.getPrincipal();
 
-                String oauthId = oauth2User.getAttribute("sub") != null ?
-                        oauth2User.getAttribute("sub").toString() :
-                        oauth2User.getAttribute("id").toString();
+                String oauthId = null;
+                String provider = null;
+                String email = null;
+                String name = null;
+                String username = null;
+                String avatarUrl = null;
+
+                if (oauth2User.getAttribute("iss") != null && oauth2User.getAttribute("iss").toString().contains("google")) {
+                    oauthId = oauth2User.getAttribute("sub").toString();
+                    provider = "google";
+                    email = oauth2User.getAttribute("email");
+                    name = oauth2User.getAttribute("name");
+                    username = null;
+                    avatarUrl = oauth2User.getAttribute("picture");
+                } else if (oauth2User.getAttribute("login") != null && oauth2User.getAttribute("avatar_url") != null) {
+                    oauthId = oauth2User.getAttribute("id").toString();
+                    provider = "github";
+                    email = oauth2User.getAttribute("email");
+                    name = oauth2User.getAttribute("name");
+                    username = oauth2User.getAttribute("login");
+                    avatarUrl = oauth2User.getAttribute("avatar_url");
+               }
+//                else if (oauth2User.getAttribute("id") != null && oauth2User.getAttribute("picture") != null) {
+//                    oauthId = oauth2User.getAttribute("id").toString();
+//                    provider = "facebook";
+//                    email = oauth2User.getAttribute("email");
+//                    name = oauth2User.getAttribute("name");
+//                    username = oauth2User.getAttribute("name");
+//                    Object pictureObj = oauth2User.getAttribute("picture");
+//                    if (pictureObj instanceof java.util.Map) {
+//                        Object dataObj = ((java.util.Map<?, ?>) pictureObj).get("data");
+//                        if (dataObj instanceof java.util.Map) {
+//                            avatarUrl = (String) ((java.util.Map<?, ?>) dataObj).get("url");
+//                        }
+//                    }
+//                } else if (oauth2User.getAttribute("screen_name") != null) {
+//                    oauthId = oauth2User.getAttribute("id_str") != null ? oauth2User.getAttribute("id_str").toString() : oauth2User.getAttribute("id").toString();
+//                    provider = "twitter";
+//                    email = oauth2User.getAttribute("email");
+//                    name = oauth2User.getAttribute("name");
+//                    username = oauth2User.getAttribute("screen_name");
+//                    avatarUrl = oauth2User.getAttribute("profile_image_url_https");
+//                }
 
                 User user = userRepository.findByOauthId(oauthId)
                         .orElse(new User());
 
-                // Set user data
                 user.setOauthId(oauthId);
-                user.setEmail(oauth2User.getAttribute("email"));
-                user.setName(oauth2User.getAttribute("name"));
-                user.setUsername(oauth2User.getAttribute("login"));
-                user.setAvatarUrl(oauth2User.getAttribute("avatar_url"));
-                user.setProvider(oauth2User.getAttribute("iss") != null ? "google" : "github");
+                user.setEmail(email);
+                user.setName(name);
+                user.setUsername(username);
+                user.setAvatarUrl(avatarUrl);
+                user.setProvider(provider);
 
-                // Initialize tokens for new users
                 if (user.getId() == null) {
                     user.setDailyTokens(tokenConfig.getDailyTokenLimit());
                     user.setLastTokenRefresh(LocalDate.now());
+                    user.setLoginTime(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
                 }
 
                 userRepository.save(user);
