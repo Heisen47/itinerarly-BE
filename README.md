@@ -160,7 +160,7 @@ loginTime: ZonedDateTime (IST)
 }
 ```
 
-## Token System 🪙
+## Token System 
 Each new user receives a daily token limit (configurable in application.yml, default is 6).
 
 - Tokens are intended to be used for rate-limiting certain API calls.
