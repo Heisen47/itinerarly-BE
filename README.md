@@ -36,8 +36,6 @@ Create OAuth2 applications for each provider:
 
 1. **Google**: [Google Cloud Console](https://console.cloud.google.com/)
 2. **GitHub**: [GitHub Developer Settings](https://github.com/settings/developers)
-3. **Facebook**: [Facebook Developers](https://developers.facebook.com/)
-4. **Twitter**: [Twitter Developer Portal](https://developer.twitter.com/)
 
 ### Application Properties
 
@@ -55,14 +53,6 @@ spring:
             client-id: ${GITHUB_CLIENT_ID}
             client-secret: ${GITHUB_CLIENT_SECRET}
             scope: user:email
-          facebook:
-            client-id: ${FACEBOOK_CLIENT_ID}
-            client-secret: ${FACEBOOK_CLIENT_SECRET}
-            scope: email,public_profile
-          twitter:
-            client-id: ${TWITTER_CLIENT_ID}
-            client-secret: ${TWITTER_CLIENT_SECRET}
-            scope: users.read,tweet.read
 
 jwt:
   secret: ${JWT_SECRET}
@@ -92,14 +82,6 @@ Before running the application, you'll need to set up the necessary environment 
 ```export GITHUB_CLIENT_ID=your_github_client_id```
 
 ```export GITHUB_CLIENT_SECRET=your_github_client_secret```
-
-```export FACEBOOK_CLIENT_ID=your_facebook_client_id```
-
-```export FACEBOOK_CLIENT_SECRET=your_facebook_client_secret```
-
-```export TWITTER_CLIENT_ID=your_twitter_client_id```
-
-```export TWITTER_CLIENT_SECRET=your_twitter_client_secret```
 
 ```export JWT_SECRET=your_jwt_secret_key```
 
