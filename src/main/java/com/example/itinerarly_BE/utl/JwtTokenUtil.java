@@ -50,7 +50,6 @@ public class JwtTokenUtil {
             Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token);
             return true;
         } catch (Exception e) {
-            System.out.println("JWT Token validation failed: " + e.getMessage());
             return false;
         }
     }

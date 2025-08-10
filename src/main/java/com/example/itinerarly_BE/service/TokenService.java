@@ -46,11 +46,6 @@ public class TokenService {
         LocalDate today = LocalDate.now();
         LocalDate lastRefresh = user.getLastTokenRefresh();
 
-        System.out.println("Today: " + today);
-        System.out.println("Last refresh: " + lastRefresh);
-        System.out.println("Current tokens: " + user.getDailyTokens());
-        System.out.println("Config limit: " + tokenConfig.getDailyTokenLimit());
-        System.out.println("Dates equal: " + (lastRefresh != null && lastRefresh.equals(today)));
 
         if (lastRefresh == null || !lastRefresh.equals(today)) {
             System.out.println("Updating tokens to: " + tokenConfig.getDailyTokenLimit());

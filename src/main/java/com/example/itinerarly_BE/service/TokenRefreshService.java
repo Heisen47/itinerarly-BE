@@ -23,6 +23,5 @@ public class TokenRefreshService {
             user.setLastTokenRefresh(LocalDate.now());
             userRepository.save(user);
         });
-        System.out.println("Daily tokens refreshed for all users" + tokenConfig.getDailyTokenLimit());
     }
 }

@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  backend:
+    build: .
+    container_name: itinerarly-backend
+    ports:
+      - "8080:8080"
+    environment:
+      - SPRING_DATASOURCE_URL=${db-url}
+      - SPRING_DATASOURCE_USERNAME=${db-username}
+      - SPRING_DATASOURCE_PASSWORD=${db-password}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=update
+      - JWT_SECRET=${JWT-Secret}
+      - GOOGLE_CLIENT_ID=${google-client-id}
+      - GOOGLE_CLIENT_SECRET=${google-secret}
+      - GITHUB_CLIENT_ID=${github-client-id}
+      - GITHUB_CLIENT_SECRET=${github-secret}
+    depends_on:
+      - db
+    restart: unless-stopped
+
+  db:
+    image: mysql:8.0
+    container_name: itinerarly-db
+    environment:
+      MYSQL_ROOT_PASSWORD: ${db-password}
+      MYSQL_DATABASE: itinerarly
+    ports:
+      - "3306:3306"
+    volumes:
+      - db_data:/var/lib/mysql
+    restart: unless-stopped
+
+volumes:
+  db_data:
