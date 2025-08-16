@@ -11,9 +11,9 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class home {
 
-    @GetMapping("/")
+    @GetMapping("/test")
     public ResponseEntity<String> test() {
-        return ResponseEntity.ok("Hello World");
+        return ResponseEntity.ok("Hello World of Itinerarly");
     }
 
 
