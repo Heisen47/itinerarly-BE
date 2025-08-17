@@ -1,50 +1,122 @@
 package com.example.itinerarly_BE.repository;
 
 import com.example.itinerarly_BE.model.User;
-import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
+import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
+import org.springframework.test.context.ActiveProfiles;
+
+import java.time.LocalDate;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 import java.util.Optional;
-import static org.assertj.core.api.Assertions.assertThat;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 @DataJpaTest
+@ActiveProfiles("test")
 class UserRepositoryTest {
+
+    @Autowired
+    private TestEntityManager entityManager;
+
     @Autowired
     private UserRepository userRepository;
 
-    @Test
-    @DisplayName("Should save and retrieve user by oauthId")
-    void testSaveAndFindByOauthId() {
-        User user = new User();
-        user.setOauthId("oauth-456");
-        user.setEmail("repo@example.com");
-        user.setName("Repo User");
-        user.setUsername("repouser");
-        user.setProvider("github");
-        user.setDailyTokens(6);
-        userRepository.save(user);
+    private User testUser;
 
-        Optional<User> found = userRepository.findByOauthId("oauth-456");
-        assertThat(found).isPresent();
-        assertThat(found.get().getUsername()).isEqualTo("repouser");
+    @BeforeEach
+    void setUp() {
+        testUser = new User();
+        testUser.setOauthId("test-oauth-id");
+        testUser.setEmail("test@example.com");
+        testUser.setName("Test User");
+        testUser.setUsername("testuser");
+        testUser.setProvider("google");
+        testUser.setAvatarUrl("https://example.com/avatar.jpg");
+        testUser.setDailyTokens(10);
+        testUser.setLastTokenRefresh(LocalDate.now());
+        testUser.setLoginTime(ZonedDateTime.now(ZoneId.of("Asia/Kolkata")));
     }
 
     @Test
-    @DisplayName("Should save and retrieve user by email")
-    void testSaveAndFindByEmail() {
-        User user = new User();
-        user.setOauthId("oauth-789");
-        user.setEmail("findbyemail@example.com");
-        user.setName("Email User");
-        user.setUsername("emailuser");
-        user.setProvider("google");
-        user.setDailyTokens(6);
-        userRepository.save(user);
+    void testFindByOauthId_Found() {
+        // Given
+        entityManager.persistAndFlush(testUser);
 
-        Optional<User> found = userRepository.findByEmail("findbyemail@example.com");
-        assertThat(found).isPresent();
-        assertThat(found.get().getOauthId()).isEqualTo("oauth-789");
+        // When
+        Optional<User> found = userRepository.findByOauthId("test-oauth-id");
+
+        // Then
+        assertTrue(found.isPresent());
+        assertEquals("test@example.com", found.get().getEmail());
+        assertEquals("Test User", found.get().getName());
+        assertEquals("google", found.get().getProvider());
+    }
+
+    @Test
+    void testFindByOauthId_NotFound() {
+        // When
+        Optional<User> found = userRepository.findByOauthId("nonexistent-oauth-id");
+
+        // Then
+        assertFalse(found.isPresent());
+    }
+
+    @Test
+    void testSaveUser_Success() {
+        // When
+        User savedUser = userRepository.save(testUser);
+
+        // Then
+        assertNotNull(savedUser.getId());
+        assertEquals("test-oauth-id", savedUser.getOauthId());
+        assertEquals("test@example.com", savedUser.getEmail());
+        assertEquals("Test User", savedUser.getName());
+    }
+
+    @Test
+    void testFindByEmail_Found() {
+        // Given
+        entityManager.persistAndFlush(testUser);
+
+        // When
+        Optional<User> found = userRepository.findByEmail("test@example.com");
+
+        // Then
+        assertTrue(found.isPresent());
+        assertEquals("test-oauth-id", found.get().getOauthId());
+    }
+
+    @Test
+    void testUpdateUser_Success() {
+        // Given
+        User savedUser = entityManager.persistAndFlush(testUser);
+
+        // When
+        savedUser.setDailyTokens(5);
+        savedUser.setName("Updated Name");
+        User updatedUser = userRepository.save(savedUser);
+
+        // Then
+        assertEquals(5, updatedUser.getDailyTokens());
+        assertEquals("Updated Name", updatedUser.getName());
+    }
+
+    @Test
+    void testDeleteUser_Success() {
+        // Given
+        User savedUser = entityManager.persistAndFlush(testUser);
+        Long userId = savedUser.getId();
+
+        // When
+        userRepository.delete(savedUser);
+        entityManager.flush();
+
+        // Then
+        Optional<User> found = userRepository.findById(userId);
+        assertFalse(found.isPresent());
     }
 }
-

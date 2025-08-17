@@ -45,11 +45,12 @@ public class SecurityConfig {
         http
                 .cors(cors -> cors.configure(http))
                 .csrf(csrf -> csrf
-                        .ignoringRequestMatchers("/api/v1/logout", "/api/**")
+                        .ignoringRequestMatchers("/api/v1/logout", "/api/**", "/oauth2/**", "/login/**")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui/**", "/v3/api-docs/**", "/oauth2/authorization/**", "/api/v1/start" ,"/test").permitAll();
+                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui/**", "/v3/api-docs/**",
+                            "/oauth2/authorization/**", "/api/v1/start", "/test", "/login/**").permitAll();
                     auth.requestMatchers("/api/**").authenticated();
                     auth.anyRequest().authenticated();
                 })
@@ -79,17 +80,30 @@ public class SecurityConfig {
                     provider = "google";
                     email = oauth2User.getAttribute("email");
                     name = oauth2User.getAttribute("name");
-                    username = oauth2User.getAttribute("email"); // Use email as username for Google
-                    avatarUrl = oauth2User.getAttribute("picture"); // Fix: was null before
+                    username = oauth2User.getAttribute("email");
+                    avatarUrl = oauth2User.getAttribute("picture"); // Fixed: get picture from Google
                 }
                 // GitHub OAuth
-                else if (oauth2User.getAttribute("login") != null && oauth2User.getAttribute("avatar_url") != null) {
+                else if (oauth2User.getAttribute("login") != null) {
                     oauthId = oauth2User.getAttribute("id").toString();
                     provider = "github";
                     email = oauth2User.getAttribute("email");
                     name = oauth2User.getAttribute("name");
                     username = oauth2User.getAttribute("login");
                     avatarUrl = oauth2User.getAttribute("avatar_url");
+
+                    // Handle case where GitHub email might be null if private
+                    if (email == null) {
+                        email = username + "@github.local"; // Fallback email
+                    }
+                }
+                else {
+                    throw new RuntimeException("Unsupported OAuth provider");
+                }
+
+                // Validate required fields
+                if (oauthId == null || provider == null || email == null) {
+                    throw new RuntimeException("Missing required OAuth fields");
                 }
 
                 User user = userRepository.findByOauthId(oauthId)
@@ -115,10 +129,15 @@ public class SecurityConfig {
                 cookie.setHttpOnly(false);
                 cookie.setPath("/");
                 cookie.setMaxAge(86400);
+                cookie.setSecure(true); // Enable for HTTPS in production
+                cookie.setAttribute("SameSite", "None"); // Allow cross-site cookies
                 response.addCookie(cookie);
 
-                // Use dynamic frontend URL instead of hardcoded localhost
-                response.sendRedirect(frontendUrl + "/start");
+                // Ensure frontend URL has trailing slash removed if present, then add /start
+                String redirectUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+                redirectUrl += "/start";
+
+                response.sendRedirect(redirectUrl);
             } catch (Exception ex) {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
@@ -131,7 +150,9 @@ public class SecurityConfig {
         return (request, response, exception) -> {
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
             response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-            response.getWriter().write("{\"error\": \"OAuth2 authentication error: " + exception.getMessage() + "\"}");
+            String redirectUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
+            redirectUrl += "/auth?error=oauth_failed";
+            response.sendRedirect(redirectUrl);
         };
     }
 }

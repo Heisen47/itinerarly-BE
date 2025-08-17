@@ -1,45 +1,94 @@
 #!/bin/bash
 
-# Production deployment script for Itinerarly Backend
+# Production Deployment Script
+# This script helps deploy the Itinerarly backend to production
 
 set -e
 
-echo "Starting production deployment..."
+echo "🚀 Itinerarly Backend Production Deployment"
+echo "=========================================="
 
-# Check if .env file exists
-if [ ! -f .env ]; then
-    echo "❌ .env file not found. Please copy .env.template to .env and configure your values."
-    exit 1
-fi
+# Check if required environment variables are set
+required_vars=(
+    "SPRING_DATASOURCE_URL"
+    "SPRING_DATASOURCE_USERNAME"
+    "SPRING_DATASOURCE_PASSWORD"
+    "JWT_SECRET"
+    "FRONTEND_URL"
+    "GITHUB_CLIENT_ID"
+    "GITHUB_CLIENT_SECRET"
+    "GOOGLE_CLIENT_ID"
+    "GOOGLE_CLIENT_SECRET"
+)
 
-# Load environment variables
-export $(cat .env | xargs)
+echo "🔍 Checking required environment variables..."
+missing_vars=()
 
-# Validate required environment variables
-required_vars=("DB_PASSWORD" "JWT_SECRET" "GOOGLE_CLIENT_ID" "GOOGLE_CLIENT_SECRET" "GITHUB_CLIENT_ID" "GITHUB_CLIENT_SECRET")
 for var in "${required_vars[@]}"; do
     if [ -z "${!var}" ]; then
-        echo "❌ Required environment variable $var is not set"
-        exit 1
+        missing_vars+=("$var")
     fi
 done
 
-echo "✅ Environment variables validated"
+if [ ${#missing_vars[@]} -ne 0 ]; then
+    echo "❌ Missing required environment variables:"
+    printf '   - %s\n' "${missing_vars[@]}"
+    echo ""
+    echo "Please set these variables before running the deployment."
+    exit 1
+fi
 
-# Build and start services
-echo "🔨 Building and starting services..."
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+echo "✅ All required environment variables are set!"
 
-# Wait for services to be healthy
-echo "⏳ Waiting for services to be healthy..."
-timeout 120 bash -c 'until docker-compose ps | grep -q "healthy"; do sleep 5; done'
+# Build the application
+echo ""
+echo "📦 Building application..."
+mvn clean package -DskipTests
 
-echo "✅ Services are healthy and running"
+# Build Docker image
+echo ""
+echo "🏗️  Building Docker image..."
+docker build -t itinerarly-backend:latest .
 
-# Show running containers
-echo "📊 Running containers:"
-docker-compose ps
+# Run tests
+echo ""
+echo "🧪 Running tests..."
+mvn test
 
+# Deploy
+echo ""
+echo "🚀 Deploying to production..."
+docker-compose -f docker-compose.prod.yml down
+docker-compose -f docker-compose.prod.yml up -d
+
+# Wait for health check
+echo ""
+echo "⏳ Waiting for application to be healthy..."
+timeout=60
+counter=0
+
+while [ $counter -lt $timeout ]; do
+    if curl -f http://localhost:8080/actuator/health > /dev/null 2>&1; then
+        echo "✅ Application is healthy!"
+        break
+    fi
+
+    echo "   Waiting for health check... ($((counter + 1))/$timeout)"
+    sleep 1
+    counter=$((counter + 1))
+done
+
+if [ $counter -eq $timeout ]; then
+    echo "❌ Application failed to become healthy within $timeout seconds"
+    echo "📊 Checking logs..."
+    docker-compose -f docker-compose.prod.yml logs backend
+    exit 1
+fi
+
+echo ""
 echo "🎉 Production deployment completed successfully!"
-echo "🌐 Backend is available at: http://localhost:${BACKEND_PORT:-8080}"
-echo "📊 Health check: http://localhost:${BACKEND_PORT:-8080}/api/v1/start"
+echo "🌐 Backend available at: http://localhost:8080"
+echo "📊 Health check: http://localhost:8080/actuator/health"
+echo ""
+echo "📊 To view logs: docker-compose -f docker-compose.prod.yml logs -f"
+echo "🛑 To stop: docker-compose -f docker-compose.prod.yml down"

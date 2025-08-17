@@ -1,363 +1,272 @@
 # Itinerarly Backend
 
-A production-ready Spring Boot REST API backend service for travel itinerary management with comprehensive OAuth2 authentication, JWT token management, containerized deployment, and robust testing framework.
+A Spring Boot REST API backend for the Itinerarly travel planning application with OAuth2 authentication and JWT token management.
 
 ## 🚀 Features
 
-- **Multi-Provider OAuth2 Authentication**: Google and GitHub OAuth2 support with automatic user registration
-- **JWT Token Authentication**: Secure token-based authentication with HTTP-only cookies
-- **Daily Token Rate Limiting**: User-based daily API usage limits with automatic midnight refresh
-- **User Profile Management**: Complete user profile system with provider-specific data and avatar URLs
-- **Production-Ready Containerization**: Multi-stage Docker builds with health checks and security best practices
-- **Comprehensive Testing Suite**: Unit, integration, and repository tests with H2 in-memory database
-- **Security Best Practices**: Non-root containers, CORS configuration, secure secrets management
-- **Monitoring & Health Checks**: Built-in health endpoints and container monitoring
-- **Multi-Environment Support**: Separate configurations for development, testing, and production
-- **Automatic Token Refresh**: Scheduled daily token refresh service using Spring's @Scheduled annotation
+- **OAuth2 Authentication**: Google and GitHub login integration
+- **JWT Token Management**: Secure authentication with daily token limits
+- **RESTful APIs**: User management and token tracking endpoints
+- **MySQL Database**: Production-ready database with connection pooling
+- **Docker Support**: Containerized deployment with Docker Compose
+- **Comprehensive Testing**: Unit tests, integration tests, and test containers
+- **Production Ready**: Health checks, monitoring, and security configurations
 
-## 🛠 Tech Stack
+## 🛠️ Tech Stack
 
-- **Framework**: Spring Boot 3.4.5 with Java 21
-- **Security**: Spring Security OAuth2 with JWT (jjwt library)
-- **Database**: MySQL 8.0 (production), H2 (testing)
-- **Containerization**: Docker & Docker Compose with multi-stage builds
-- **Authentication**: JWT with HTTP-only cookies and secure token validation
-- **Documentation**: Swagger/OpenAPI 3.0 with custom configuration
-- **Testing**: JUnit 5, Mockito, Spring Boot Test, TestContainers
-- **Build Tool**: Maven 3.9+ with dependency management
-- **Scheduling**: Spring Task Scheduling for automated token refresh
+- **Framework**: Spring Boot 3.4.5
+- **Java Version**: 21
+- **Database**: MySQL 8.0 (H2 for testing)
+- **Security**: Spring Security with OAuth2
+- **Authentication**: JWT tokens
+- **Documentation**: OpenAPI/Swagger
+- **Testing**: JUnit 5, Mockito, TestContainers
+- **Containerization**: Docker & Docker Compose
 
 ## 📋 Prerequisites
 
 - Java 21 or higher
-- Maven 3.9+
-- Docker & Docker Compose (or OrbStack)
-- OAuth2 credentials for Google and GitHub
-- MySQL 8.0 (for production) or H2 (for testing)
+- Maven 3.6+
+- Docker & OrbStack (for containerization)
+- MySQL 8.0 (for local development)
 
-## 🔧 Environment Setup
+## ⚙️ Environment Variables
 
-### 1. Clone and Setup Environment
-
-```bash
-git clone <repository-url>
-cd itinerarly-BE
-```
-
-### 2. Configure Environment Variables
-
-Create a `.env` file in the project root with the following variables:
-
+### Required for Production
 ```bash
 # Database Configuration
-DB_USERNAME=your_db_username
-DB_PASSWORD=your_db_password
-DB_ROOT_PASSWORD=your_root_password
-DB_NAME=itinerarly
-DB_PORT=3306
+SPRING_DATASOURCE_URL=jdbc:mysql://your-mysql-host:3306/itinerarly
+SPRING_DATASOURCE_USERNAME=your-username
+SPRING_DATASOURCE_PASSWORD=your-password
 
-# JWT Configuration
-JWT_SECRET=your_super_secret_jwt_key_minimum_32_characters
+# JWT Security
+JWT_SECRET=your-super-secret-jwt-key
 
-# OAuth2 Configuration
-GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
-GITHUB_CLIENT_ID=your_github_client_id
-GITHUB_CLIENT_SECRET=your_github_client_secret
-
-# Application Configuration
+# Frontend URL
 FRONTEND_URL=https://itinerarly-fe.vercel.app
-APP_DAILY_TOKEN_LIMIT=6
-BACKEND_PORT=8080
 
-# Spring Configuration
-SPRING_PROFILES_ACTIVE=prod
-SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/itinerarly
-SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
-SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+# OAuth2 - GitHub
+GITHUB_CLIENT_ID=your-github-client-id
+GITHUB_CLIENT_SECRET=your-github-client-secret
+
+# OAuth2 - Google
+GOOGLE_CLIENT_ID=your-google-client-id
+GOOGLE_CLIENT_SECRET=your-google-client-secret
+
+# Optional
+APP_DAILY_TOKEN_LIMIT=6
 SPRING_JPA_HIBERNATE_DDL_AUTO=validate
 SPRING_JPA_SHOW_SQL=false
 ```
 
-### 3. OAuth2 Provider Setup
-
-#### Google OAuth2 Setup
-1. Go to [Google Cloud Console](https://console.cloud.google.com/)
-2. Create a new project or select existing
-3. Enable Google+ API
-4. Create OAuth2 credentials
-5. Add authorized redirect URIs:
-   - `http://localhost:8080/login/oauth2/code/google` (development)
-   - `https://your-domain.com/login/oauth2/code/google` (production)
-
-#### GitHub OAuth2 Setup
-1. Go to GitHub Settings > Developer settings > OAuth Apps
-2. Create a new OAuth App
-3. Set authorization callback URL:
-   - `http://localhost:8080/login/oauth2/code/github` (development)
-   - `https://your-domain.com/login/oauth2/code/github` (production)
+### Optional for Development
+```bash
+MYSQL_ROOT_PASSWORD=rootpassword
+MYSQL_DATABASE=itinerarly_dev
+MYSQL_USER=devuser
+MYSQL_PASSWORD=devpassword
+```
 
 ## 🏃‍♂️ Quick Start
 
-### Local Development with OrbStack/Docker
-
+### Local Development (without Docker)
 ```bash
-# Make script executable (if not already)
-chmod +x scripts/local-docker.sh
+# Clone the repository
+git clone <repository-url>
+cd itinerarly-BE
 
-# Start development environment
-./scripts/local-docker.sh start
+# Set up environment variables
+cp .env.example .env
+# Edit .env with your values
 
-# View logs
-./scripts/local-docker.sh logs
-
-# Stop services
-./scripts/local-docker.sh stop
-
-# Clean up everything
-./scripts/local-docker.sh clean
+# Run with Maven
+mvn spring-boot:run
 ```
 
-### Manual Setup (Without Docker)
-
+### Local Development (with Docker)
 ```bash
-# Install dependencies
-mvn clean install
+# Use the convenient script for OrbStack/Docker
+./scripts/local-docker.sh
 
-# Run tests
-mvn test
-
-# Start application (development)
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-
-# Start application (production)
-mvn spring-boot:run -Dspring-boot.run.profiles=prod
+# Or manually:
+docker-compose -f docker-compose.dev.yml up -d
 ```
+
+### Production Deployment
+```bash
+# Set environment variables first
+export SPRING_DATASOURCE_URL="your-database-url"
+export JWT_SECRET="your-jwt-secret"
+# ... other variables
+
+# Deploy using script
+./scripts/deploy-prod.sh
+
+# Or manually:
+docker-compose -f docker-compose.prod.yml up -d
+```
+
+## 🐳 Docker Configuration
+
+The project includes three Docker Compose configurations:
+
+### 1. Development (`docker-compose.dev.yml`)
+- Includes local MySQL database
+- Uses port 8081 to avoid conflicts
+- Development-friendly settings
+- Source code mounting for hot reload
+
+### 2. Production (`docker-compose.prod.yml`)
+- Uses external/remote database
+- Optimized for production
+- Resource limits and health checks
+- Secure configuration
+
+### 3. Full Stack (`docker-compose.yml`)
+- Complete setup with local MySQL
+- Suitable for staging or full local testing
+- All services in one stack
 
 ## 🧪 Testing
 
 ### Run All Tests
 ```bash
-# Run all tests including unit, integration, and repository tests
 mvn test
-
-# Run tests with coverage
-mvn test jacoco:report
-
-# Run specific test class
-mvn test -Dtest=UserControllerTest
-
-# Run tests in specific package
-mvn test -Dtest="com.example.itinerarly_BE.service.*"
 ```
 
-### Test Database Configuration
-- Tests use H2 in-memory database automatically
-- Test configuration in `src/test/resources/application-test.properties`
-- No additional setup required for testing
-
-## 🐳 Docker & Containerization
-
-### Build and Run with Docker Compose
-
-#### Development Environment
+### Run Specific Test Categories
 ```bash
-# Using the convenience script
-./scripts/local-docker.sh start
+# Unit tests only
+mvn test -Dtest="**/*Test"
 
-# Or manually
-docker-compose -f docker-compose.dev.yml up -d
+# Integration tests only
+mvn test -Dtest="**/*IntegrationTest"
+
+# Repository tests only
+mvn test -Dtest="**/*RepositoryTest"
 ```
 
-#### Production Environment
+### Test Structure
+```
+src/test/java/
+├── controller/           # Controller layer tests
+├── service/             # Service layer tests
+├── repository/          # Repository tests
+├── integration/         # Integration tests
+└── UserModelTest.java   # Model tests
+```
+
+## 📡 API Endpoints
+
+### Authentication
+- `GET /oauth2/authorization/google` - Google OAuth login
+- `GET /oauth2/authorization/github` - GitHub OAuth login
+
+### User Management
+- `GET /api/v1/user/profile` - Get user profile
+- `GET /api/v1/user/tokens` - Get token status
+
+### Token Management
+- `POST /api/v1/tokens/use` - Use a token
+- `GET /api/v1/tokens/available` - Check token availability
+
+### Public Endpoints
+- `GET /api/v1/start` - Application start endpoint
+- `GET /test` - Health test endpoint
+- `GET /swagger-ui.html` - API documentation
+
+## 🔧 Configuration Profiles
+
+### Development (`application.properties`)
+- H2/MySQL database
+- Debug logging enabled
+- CORS for localhost:3000
+
+### Production (`application-prod.properties`)
+- Remote MySQL database
+- Optimized connection pooling
+- Security hardening
+- Performance logging
+
+### Testing (`application-test.properties`)
+- H2 in-memory database
+- Debug logging for tests
+- Mock OAuth2 configuration
+
+## 🔐 Security Features
+
+- **OAuth2 Integration**: Google and GitHub providers
+- **JWT Authentication**: Secure token-based auth
+- **CORS Configuration**: Proper cross-origin setup
+- **CSRF Protection**: Enabled for forms, disabled for APIs
+- **Secure Cookies**: HttpOnly, Secure, SameSite attributes
+- **Input Validation**: Request validation and sanitization
+
+## 📊 Monitoring & Health Checks
+
+- **Actuator Endpoints**: `/actuator/health`, `/actuator/info`, `/actuator/metrics`
+- **Database Health**: Automatic DB connection monitoring
+- **Container Health**: Docker health checks configured
+- **Application Metrics**: Performance and usage tracking
+
+## 🚨 Troubleshooting
+
+### Database Connection Issues
+1. **Remote MySQL timeouts**: Check firewall and network connectivity
+2. **Connection pool exhaustion**: Increase `maximum-pool-size` in properties
+3. **SSL issues**: Verify SSL certificates and `useSSL` parameter
+
+### OAuth2 Issues
+1. **Redirect URI mismatch**: Ensure OAuth app settings match your domain
+2. **CORS errors**: Verify frontend URL in CORS configuration
+3. **Provider errors**: Check client ID/secret configuration
+
+### Docker Issues
+1. **OrbStack not running**: Ensure OrbStack is started
+2. **Port conflicts**: Check if ports 8080/3306 are already in use
+3. **Environment variables**: Verify all required vars are set
+
+### Common Commands
 ```bash
-# Set environment variables first
-export $(cat .env | xargs)
-
-# Start production services
-docker-compose -f docker-compose.prod.yml up -d
-```
-
-### Manual Docker Build
-```bash
-# Build the application image
-docker build -t itinerarly-backend:latest .
-
-# Run the container
-docker run -d \
-  --name itinerarly-backend \
-  -p 8080:8080 \
-  -e SPRING_PROFILES_ACTIVE=prod \
-  -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/itinerarly \
-  --env-file .env \
-  itinerarly-backend:latest
-```
-
-## 📊 API Documentation
-
-### Swagger UI
-- **Development**: http://localhost:8080/swagger-ui/index.html
-- **Production**: https://your-domain.com/swagger-ui/index.html
-
-### Main Endpoints
-
-#### Authentication
-- `GET /oauth2/authorization/google` - Google OAuth2 login
-- `GET /oauth2/authorization/github` - GitHub OAuth2 login
-- `POST /api/v1/logout` - Logout user
-
-#### User Management
-- `GET /api/user/profile/{id}` - Get user profile
-- `PUT /api/user/profile/{id}` - Update user profile
-- `GET /api/user/tokens/{id}` - Get user token count
-
-#### Token Management
-- `POST /api/token/validate` - Validate JWT token
-- `GET /api/token/refresh/{userId}` - Refresh user tokens
-
-#### Health & Monitoring
-- `GET /` - Welcome message
-- `GET /api/v1/start` - Health check endpoint
-
-## 🏗 Project Structure
-
-```
-src/
-├── main/
-│   ├── java/com/example/itinerarly_BE/
-│   │   ├── config/          # Configuration classes
-│   │   ├── controller/      # REST controllers
-│   │   ├── model/          # Entity models
-│   │   ├── repository/     # JPA repositories
-│   │   ├── security/       # Security handlers
-│   │   ├── service/        # Business logic
-│   │   └── util/           # Utility classes
-│   └── resources/
-│       ├── application.properties         # Main configuration
-│       ├── application-dev.properties     # Development config
-│       └── application-prod.properties    # Production config
-├── test/
-│   ├── java/               # Test classes
-│   └── resources/
-│       └── application-test.properties    # Test configuration
-├── docker/
-│   └── mysql/              # MySQL configuration
-├── scripts/
-│   └── local-docker.sh     # Local development script
-└── docker-compose.*.yml    # Container orchestration
-```
-
-## 🔒 Security Features
-
-- **JWT Authentication**: Secure token-based authentication
-- **HTTP-Only Cookies**: Prevents XSS attacks
-- **CORS Configuration**: Configurable cross-origin requests
-- **OAuth2 Integration**: Secure third-party authentication
-- **Non-Root Containers**: Security best practices for Docker
-- **Environment Variable Secrets**: No hardcoded credentials
-- **Rate Limiting**: Daily token usage limits per user
-
-## 🌐 Deployment
-
-### Production Deployment Checklist
-
-1. **Environment Variables**: Set all required environment variables
-2. **Database Setup**: Configure production MySQL database
-3. **OAuth2 Configuration**: Update redirect URIs for production domain
-4. **SSL/TLS**: Enable HTTPS for production
-5. **Monitoring**: Set up application monitoring and logging
-6. **Backup Strategy**: Implement database backup solution
-
-### Deployment to Cloud Platforms
-
-#### Render.com (Current)
-- Build Command: `mvn clean package -DskipTests`
-- Start Command: `java -jar target/itinerarly-BE-0.0.1-SNAPSHOT.jar`
-- Environment Variables: Set via Render dashboard
-
-#### Docker Registry
-```bash
-# Tag and push to registry
-docker tag itinerarly-backend:latest your-registry/itinerarly-backend:latest
-docker push your-registry/itinerarly-backend:latest
-```
-
-## 🛠 Development
-
-### Adding New Features
-1. Create feature branch: `git checkout -b feature/new-feature`
-2. Write tests first (TDD approach)
-3. Implement feature
-4. Update documentation
-5. Submit pull request
-
-### Code Quality
-- Follow Spring Boot best practices
-- Write comprehensive tests (aim for >80% coverage)
-- Use meaningful commit messages
-- Document public APIs with Swagger annotations
-
-## 🐛 Troubleshooting
-
-### Common Issues
-
-#### DataSource Configuration Error
-```
-Failed to configure a DataSource: 'url' attribute is not specified
-```
-**Solution**: Ensure `SPRING_DATASOURCE_URL` is set in environment variables
-
-#### OAuth2 Redirect Mismatch
-```
-redirect_uri_mismatch
-```
-**Solution**: Verify OAuth2 redirect URIs match in provider settings
-
-#### JWT Token Issues
-```
-JWT signature does not match locally computed signature
-```
-**Solution**: Ensure `JWT_SECRET` is consistent across deployments
-
-#### Database Connection Failed
-```
-Communications link failure
-```
-**Solution**: Verify database is running and connection details are correct
-
-### Debugging
-```bash
-# Enable debug logging
-export LOGGING_LEVEL_COM_EXAMPLE_ITINERARLY_BE=DEBUG
-
 # View application logs
 docker-compose logs -f backend
 
-# Access database directly
-docker-compose exec db mysql -u root -p
+# Connect to MySQL container
+docker exec -it itinerarly-mysql mysql -u root -p
+
+# Rebuild containers
+docker-compose down && docker-compose up --build -d
+
+# Clean Docker system
+docker system prune -a
 ```
 
-## 📄 License
+## 📈 Performance Optimization
 
-This project is licensed under the MIT License - see the LICENSE file for details.
+- **Connection Pooling**: HikariCP with optimized settings
+- **JVM Tuning**: Container-aware memory settings
+- **Database Indexing**: Optimized queries and indexes
+- **Caching**: Application-level caching for frequently accessed data
 
 ## 🤝 Contributing
 
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
+2. Create a feature branch (`git checkout -b feature/amazing-feature`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
+4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
+
+## 📝 License
+
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+
+## 🔗 Related Projects
+
+- [Frontend Repository](https://github.com/your-username/itinerarly-frontend)
+- [Deployment Scripts](https://github.com/your-username/itinerarly-deployment)
 
 ## 📞 Support
 
-For support and questions:
-- Create an issue in the repository
-- Contact the development team
-- Check the troubleshooting section above
-
----
-
-**Current Status**: ✅ Production Ready
-**Last Updated**: August 2025
-**Version**: 1.0.0
+- **Issues**: [GitHub Issues](https://github.com/your-username/itinerarly-BE/issues)
+- **Documentation**: [API Docs](https://itinerarly-be.onrender.com/swagger-ui.html)
+- **Live Demo**: [Frontend](https://itinerarly-fe.vercel.app)
