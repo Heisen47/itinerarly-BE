@@ -2,9 +2,9 @@
 
 A production-ready Spring Boot REST API backend service for travel itinerary management with comprehensive OAuth2 authentication, JWT token management, containerized deployment, and robust testing framework.
 
-##  Features
+## 🚀 Features
 
-- **Multi-Provider OAuth2 Authentication**: Google, GitHub, Facebook, and Twitter support with automatic user registration
+- **Multi-Provider OAuth2 Authentication**: Google and GitHub OAuth2 support with automatic user registration
 - **JWT Token Authentication**: Secure token-based authentication with HTTP-only cookies
 - **Daily Token Rate Limiting**: User-based daily API usage limits with automatic midnight refresh
 - **User Profile Management**: Complete user profile system with provider-specific data and avatar URLs
@@ -15,462 +15,349 @@ A production-ready Spring Boot REST API backend service for travel itinerary man
 - **Multi-Environment Support**: Separate configurations for development, testing, and production
 - **Automatic Token Refresh**: Scheduled daily token refresh service using Spring's @Scheduled annotation
 
-##  Tech Stack
+## 🛠 Tech Stack
 
-- **Framework**: Spring Boot 3.x with Java 21
+- **Framework**: Spring Boot 3.4.5 with Java 21
 - **Security**: Spring Security OAuth2 with JWT (jjwt library)
 - **Database**: MySQL 8.0 (production), H2 (testing)
 - **Containerization**: Docker & Docker Compose with multi-stage builds
 - **Authentication**: JWT with HTTP-only cookies and secure token validation
 - **Documentation**: Swagger/OpenAPI 3.0 with custom configuration
-- **Testing**: JUnit 5, Mockito, Spring Boot Test
+- **Testing**: JUnit 5, Mockito, Spring Boot Test, TestContainers
 - **Build Tool**: Maven 3.9+ with dependency management
 - **Scheduling**: Spring Task Scheduling for automated token refresh
 
-##  Prerequisites
+## 📋 Prerequisites
 
 - Java 21 or higher
 - Maven 3.9+
-- Docker & Docker Compose
-- OAuth2 credentials for supported providers
+- Docker & Docker Compose (or OrbStack)
+- OAuth2 credentials for Google and GitHub
 - MySQL 8.0 (for production) or H2 (for testing)
 
-##  Environment Setup
+## 🔧 Environment Setup
 
 ### 1. Clone and Setup Environment
 
 ```bash
 git clone <repository-url>
 cd itinerarly-BE
-
-# Copy environment template
-cp .env.template .env
 ```
 
 ### 2. Configure Environment Variables
 
-Edit `.env` file with your credentials:
+Create a `.env` file in the project root with the following variables:
 
-```env
+```bash
 # Database Configuration
+DB_USERNAME=your_db_username
+DB_PASSWORD=your_db_password
+DB_ROOT_PASSWORD=your_root_password
 DB_NAME=itinerarly
-DB_USERNAME=root
-DB_PASSWORD=your_secure_database_password
-DB_APP_USER=appuser
-DB_APP_PASSWORD=your_app_user_password
+DB_PORT=3306
 
 # JWT Configuration
-JWT_SECRET=your_very_long_and_secure_jwt_secret_key_here
+JWT_SECRET=your_super_secret_jwt_key_minimum_32_characters
 
 # OAuth2 Configuration
 GOOGLE_CLIENT_ID=your_google_client_id
 GOOGLE_CLIENT_SECRET=your_google_client_secret
 GITHUB_CLIENT_ID=your_github_client_id
 GITHUB_CLIENT_SECRET=your_github_client_secret
-FACEBOOK_CLIENT_ID=your_facebook_client_id
-FACEBOOK_CLIENT_SECRET=your_facebook_client_secret
-TWITTER_CLIENT_ID=your_twitter_client_id
-TWITTER_CLIENT_SECRET=your_twitter_client_secret
 
-# Application Settings
-DAILY_TOKEN_LIMIT=6
+# Application Configuration
+FRONTEND_URL=https://itinerarly-fe.vercel.app
+APP_DAILY_TOKEN_LIMIT=6
 BACKEND_PORT=8080
-SPRING_PROFILES_ACTIVE=dev
+
+# Spring Configuration
+SPRING_PROFILES_ACTIVE=prod
+SPRING_DATASOURCE_URL=jdbc:mysql://localhost:3306/itinerarly
+SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+SPRING_JPA_HIBERNATE_DDL_AUTO=validate
+SPRING_JPA_SHOW_SQL=false
 ```
 
 ### 3. OAuth2 Provider Setup
 
-#### Google OAuth2
+#### Google OAuth2 Setup
 1. Go to [Google Cloud Console](https://console.cloud.google.com/)
 2. Create a new project or select existing
 3. Enable Google+ API
 4. Create OAuth2 credentials
-5. Add redirect URI: `http://localhost:8080/login/oauth2/code/google`
-6. Configure authorized domains
+5. Add authorized redirect URIs:
+   - `http://localhost:8080/login/oauth2/code/google` (development)
+   - `https://your-domain.com/login/oauth2/code/google` (production)
 
-#### GitHub OAuth2
-1. Go to [GitHub Developer Settings](https://github.com/settings/developers)
-2. Create new OAuth App
-3. Set Authorization callback URL: `http://localhost:8080/login/oauth2/code/github`
-4. Note: GitHub provides user data including `login`, `avatar_url`, and `id`
+#### GitHub OAuth2 Setup
+1. Go to GitHub Settings > Developer settings > OAuth Apps
+2. Create a new OAuth App
+3. Set authorization callback URL:
+   - `http://localhost:8080/login/oauth2/code/github` (development)
+   - `https://your-domain.com/login/oauth2/code/github` (production)
 
-#### Facebook OAuth2
-1. Go to [Facebook Developers](https://developers.facebook.com/)
-2. Create new app
-3. Add Facebook Login product
-4. Set Valid OAuth Redirect URI: `http://localhost:8080/login/oauth2/code/facebook`
-5. Configure scopes: `email`, `public_profile`
+## 🏃‍♂️ Quick Start
 
-#### Twitter OAuth2
-1. Go to [Twitter Developer Portal](https://developer.twitter.com/)
-2. Create new app with OAuth 2.0 enabled
-3. Set Callback URI: `http://localhost:8080/login/oauth2/code/twitter`
-4. Configure scopes: `tweet.read`, `users.read`
-5. Note: Uses Twitter API v2 for user information
-
-##  Docker Deployment
-
-### Production Deployment
+### Local Development with OrbStack/Docker
 
 ```bash
-# Quick production deployment with validation
-./scripts/deploy-prod.sh
+# Make script executable (if not already)
+chmod +x scripts/local-docker.sh
 
-# Manual production deployment
-docker-compose -f docker-compose.yml -f docker-compose.prod.yml up --build -d
+# Start development environment
+./scripts/local-docker.sh start
 
-# Check service health
-docker-compose ps
-docker-compose logs -f backend
+# View logs
+./scripts/local-docker.sh logs
+
+# Stop services
+./scripts/local-docker.sh stop
+
+# Clean up everything
+./scripts/local-docker.sh clean
 ```
 
-### Development Deployment
+### Manual Setup (Without Docker)
 
 ```bash
-# Development with hot reload and debug port
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up --build
+# Install dependencies
+mvn clean install
 
-# Local development without Docker
-mvn spring-boot:run
-
-# Run with specific profile
-mvn spring-boot:run -Dspring-boot.run.profiles=dev
-```
-
-### Docker Architecture
-
-- **Multi-stage builds**: Separate build and runtime environments for optimization
-- **Health checks**: Automated health monitoring with restart policies
-- **Non-root containers**: Enhanced security with dedicated application user
-- **Resource limits**: CPU and memory constraints for production stability
-- **Persistent volumes**: Database data persistence with backup-ready structure
-- **Custom networks**: Service isolation and secure communication
-- **Environment-specific configs**: Separate compose files for dev/prod environments
-
-##  Testing
-
-### Run All Tests
-
-```bash
-# Unit and integration tests
+# Run tests
 mvn test
 
-# Run tests with coverage report
+# Start application (development)
+mvn spring-boot:run -Dspring-boot.run.profiles=dev
+
+# Start application (production)
+mvn spring-boot:run -Dspring-boot.run.profiles=prod
+```
+
+## 🧪 Testing
+
+### Run All Tests
+```bash
+# Run all tests including unit, integration, and repository tests
+mvn test
+
+# Run tests with coverage
 mvn test jacoco:report
 
 # Run specific test class
-mvn test -Dtest=AuthControllerTest
+mvn test -Dtest=UserControllerTest
 
-# Run tests with specific profile
-mvn test -Dspring.profiles.active=test
+# Run tests in specific package
+mvn test -Dtest="com.example.itinerarly_BE.service.*"
 ```
 
-### Test Structure
+### Test Database Configuration
+- Tests use H2 in-memory database automatically
+- Test configuration in `src/test/resources/application-test.properties`
+- No additional setup required for testing
 
+## 🐳 Docker & Containerization
+
+### Build and Run with Docker Compose
+
+#### Development Environment
+```bash
+# Using the convenience script
+./scripts/local-docker.sh start
+
+# Or manually
+docker-compose -f docker-compose.dev.yml up -d
 ```
-src/test/java/
-├── controller/          # REST API endpoint tests
-│   └── AuthControllerTest.java
-├── service/            # Business logic tests
-│   └── TokenRefreshServiceTest.java
-├── repository/         # Data layer tests
-│   └── UserRepositoryTest.java
-├── model/              # Entity model tests
-│   └── UserModelTest.java
-└── integration/        # End-to-end integration tests
-    └── OAuth2IntegrationTest.java
+
+#### Production Environment
+```bash
+# Set environment variables first
+export $(cat .env | xargs)
+
+# Start production services
+docker-compose -f docker-compose.prod.yml up -d
 ```
 
-### Testing Configuration
+### Manual Docker Build
+```bash
+# Build the application image
+docker build -t itinerarly-backend:latest .
 
-- **H2 Database**: In-memory database for isolated testing
-- **Test Profiles**: Separate `application-test.properties` configuration
-- **Mock Security**: OAuth2 authentication mocking for unit tests
-- **TestContainers**: Optional Docker-based integration testing
+# Run the container
+docker run -d \
+  --name itinerarly-backend \
+  -p 8080:8080 \
+  -e SPRING_PROFILES_ACTIVE=prod \
+  -e SPRING_DATASOURCE_URL=jdbc:mysql://host.docker.internal:3306/itinerarly \
+  --env-file .env \
+  itinerarly-backend:latest
+```
 
-##  API Documentation
+## 📊 API Documentation
 
 ### Swagger UI
 - **Development**: http://localhost:8080/swagger-ui/index.html
-- **Production**: http://your-domain.com/swagger-ui/index.html
+- **Production**: https://your-domain.com/swagger-ui/index.html
 
-### Authentication Endpoints
+### Main Endpoints
 
-#### OAuth2 Login
+#### Authentication
 - `GET /oauth2/authorization/google` - Google OAuth2 login
 - `GET /oauth2/authorization/github` - GitHub OAuth2 login
-- `GET /oauth2/authorization/facebook` - Facebook OAuth2 login
-- `GET /oauth2/authorization/twitter` - Twitter OAuth2 login
+- `POST /api/v1/logout` - Logout user
 
-#### Authentication Management
-- `GET /api/v1/start` - Health check endpoint (public)
-- `POST /api/v1/logout` - User logout with cookie invalidation
-- `GET /api/v1/validate` - JWT token validation
-- `GET /` - Basic health check (public)
+#### User Management
+- `GET /api/user/profile/{id}` - Get user profile
+- `PUT /api/user/profile/{id}` - Update user profile
+- `GET /api/user/tokens/{id}` - Get user token count
 
-### Token Management Endpoints
+#### Token Management
+- `POST /api/token/validate` - Validate JWT token
+- `GET /api/token/refresh/{userId}` - Refresh user tokens
 
-#### Daily Token System
-- `GET /api/v1/tokens/remaining` - Get user's remaining daily tokens
-- `POST /api/v1/tokens/consume` - Consume one token (decrements count)
+#### Health & Monitoring
+- `GET /` - Welcome message
+- `GET /api/v1/start` - Health check endpoint
 
-**Token Features:**
-- Daily limit of 6 tokens per user (configurable)
-- Automatic refresh at midnight (IST timezone)
-- Token consumption tracking per user
-- Scheduled service for automatic token refresh
+## 🏗 Project Structure
 
-### User Management
-
-#### Profile Management
-- `GET /api/v1/users/profile` - Get authenticated user profile
-- `PUT /api/v1/users/profile` - Update user profile information
-
-**User Data Structure:**
-```json
-{
-  "id": "user_id",
-  "oauthId": "provider_user_id",
-  "email": "user@example.com",
-  "name": "User Name",
-  "username": "username",
-  "avatarUrl": "https://avatar-url.com/image.jpg",
-  "provider": "google|github|facebook|twitter",
-  "dailyTokens": 6,
-  "lastTokenRefresh": "2025-08-17",
-  "loginTime": "2025-08-17T10:30:00Z[Asia/Kolkata]"
-}
+```
+src/
+├── main/
+│   ├── java/com/example/itinerarly_BE/
+│   │   ├── config/          # Configuration classes
+│   │   ├── controller/      # REST controllers
+│   │   ├── model/          # Entity models
+│   │   ├── repository/     # JPA repositories
+│   │   ├── security/       # Security handlers
+│   │   ├── service/        # Business logic
+│   │   └── util/           # Utility classes
+│   └── resources/
+│       ├── application.properties         # Main configuration
+│       ├── application-dev.properties     # Development config
+│       └── application-prod.properties    # Production config
+├── test/
+│   ├── java/               # Test classes
+│   └── resources/
+│       └── application-test.properties    # Test configuration
+├── docker/
+│   └── mysql/              # MySQL configuration
+├── scripts/
+│   └── local-docker.sh     # Local development script
+└── docker-compose.*.yml    # Container orchestration
 ```
 
-##  Security Implementation
+## 🔒 Security Features
 
-### JWT Token Security
-- **HTTP-Only Cookies**: Secure token storage preventing XSS attacks
-- **Token Validation**: Comprehensive JWT signature and expiration validation
-- **Secure Headers**: Proper cookie configuration with security flags
-- **Token Extraction**: Support for both Authorization header and cookie-based tokens
+- **JWT Authentication**: Secure token-based authentication
+- **HTTP-Only Cookies**: Prevents XSS attacks
+- **CORS Configuration**: Configurable cross-origin requests
+- **OAuth2 Integration**: Secure third-party authentication
+- **Non-Root Containers**: Security best practices for Docker
+- **Environment Variable Secrets**: No hardcoded credentials
+- **Rate Limiting**: Daily token usage limits per user
 
-### OAuth2 Security Flow
-1. User initiates OAuth2 login with provider
-2. Provider redirects to application with authorization code
-3. Application exchanges code for user information
-4. User data is processed and stored in database
-5. JWT token is generated and set as HTTP-only cookie
-6. User is redirected to frontend application
+## 🌐 Deployment
 
-### CORS Configuration
-```java
-// Configured origins and methods
-.allowedOrigins("http://localhost:3000")
-.allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
-.allowCredentials(true)
-.exposedHeaders("Set-Cookie")
-```
+### Production Deployment Checklist
 
-### Container Security
-- Non-root user execution in containers
-- Minimal Alpine-based runtime images
-- Security scanning compatible base images
-- Proper file permissions and ownership
+1. **Environment Variables**: Set all required environment variables
+2. **Database Setup**: Configure production MySQL database
+3. **OAuth2 Configuration**: Update redirect URIs for production domain
+4. **SSL/TLS**: Enable HTTPS for production
+5. **Monitoring**: Set up application monitoring and logging
+6. **Backup Strategy**: Implement database backup solution
 
-##  Monitoring & Health Checks
+### Deployment to Cloud Platforms
 
-### Application Health Endpoints
-- `GET /api/v1/start` - Custom application health check
-- `GET /actuator/health` - Spring Boot Actuator health information
-- `GET /actuator/metrics` - Application performance metrics
+#### Render.com (Current)
+- Build Command: `mvn clean package -DskipTests`
+- Start Command: `java -jar target/itinerarly-BE-0.0.1-SNAPSHOT.jar`
+- Environment Variables: Set via Render dashboard
 
-### Docker Health Monitoring
-- **Backend Container**: HTTP health check on `/api/v1/start` endpoint
-- **Database Container**: MySQL ping command validation
-- **Automatic Recovery**: Container restart on health check failure
-- **Health Dependencies**: Backend waits for database health before starting
-
-### Logging Configuration
-- **Security Logging**: OAuth2 authentication flow tracing
-- **Error Tracking**: Comprehensive error logging with stack traces
-- **Performance Monitoring**: SQL query logging (development only)
-- **Container Logs**: Structured logging for Docker environments
-
-##  Production Deployment
-
-### System Requirements
-- **CPU**: Minimum 1 core, recommended 2+ cores
-- **Memory**: Minimum 1GB RAM, recommended 2GB+
-- **Storage**: SSD recommended, 10GB+ available space
-- **Network**: HTTPS/SSL configuration for OAuth2 security
-
-### Production Configuration
-- **Database Connection Pooling**: HikariCP with optimized settings
-- **JVM Optimization**: Container-aware memory settings
-- **Security Headers**: HTTPS-only cookie configuration
-- **Resource Limits**: Container memory and CPU constraints
-- **Health Check Intervals**: Production-optimized monitoring
-
-### Deployment Checklist
-- [ ] Environment variables configured and validated
-- [ ] OAuth2 credentials setup for production domains
-- [ ] Database backup and recovery strategy implemented
-- [ ] HTTPS/SSL certificates configured and tested
-- [ ] Monitoring and alerting systems in place
-- [ ] Resource limits and scaling policies defined
-- [ ] Security audit completed
-- [ ] Performance testing validated
-
-## 🔧 Configuration Files
-
-### Application Properties Structure
-```
-src/main/resources/
-├── application.properties          # Base configuration
-├── application-dev.properties      # Development settings
-├── application-prod.properties     # Production settings
-└── application-test.properties     # Testing configuration
-```
-
-### Key Configuration Properties
-```properties
-# JWT Configuration
-JWT_SECRET=${JWT-Secret}
-
-# Token Management
-app.daily-token-limit=6
-
-# OAuth2 Providers
-spring.security.oauth2.client.registration.google.client-id=${google-client-id}
-spring.security.oauth2.client.registration.github.client-id=${github-client-id}
-spring.security.oauth2.client.registration.facebook.client-id=${facebook-client-id}
-spring.security.oauth2.client.registration.twitter.client-id=${twitter-client-id}
-
-# Database Configuration
-spring.datasource.url=${db-url}
-spring.jpa.hibernate.ddl-auto=update
-```
-
-## 🔧 Troubleshooting
-
-### Common Issues and Solutions
-
-#### OAuth2 Authentication Issues
+#### Docker Registry
 ```bash
-# Check OAuth2 credentials
-echo $GOOGLE_CLIENT_ID
-echo $GITHUB_CLIENT_ID
-
-# Verify provider configuration in logs
-docker-compose logs -f backend | grep OAuth2
-
-# Test OAuth2 endpoints
-curl -X GET http://localhost:8080/oauth2/authorization/google
+# Tag and push to registry
+docker tag itinerarly-backend:latest your-registry/itinerarly-backend:latest
+docker push your-registry/itinerarly-backend:latest
 ```
 
-#### JWT Token Problems
+## 🛠 Development
+
+### Adding New Features
+1. Create feature branch: `git checkout -b feature/new-feature`
+2. Write tests first (TDD approach)
+3. Implement feature
+4. Update documentation
+5. Submit pull request
+
+### Code Quality
+- Follow Spring Boot best practices
+- Write comprehensive tests (aim for >80% coverage)
+- Use meaningful commit messages
+- Document public APIs with Swagger annotations
+
+## 🐛 Troubleshooting
+
+### Common Issues
+
+#### DataSource Configuration Error
+```
+Failed to configure a DataSource: 'url' attribute is not specified
+```
+**Solution**: Ensure `SPRING_DATASOURCE_URL` is set in environment variables
+
+#### OAuth2 Redirect Mismatch
+```
+redirect_uri_mismatch
+```
+**Solution**: Verify OAuth2 redirect URIs match in provider settings
+
+#### JWT Token Issues
+```
+JWT signature does not match locally computed signature
+```
+**Solution**: Ensure `JWT_SECRET` is consistent across deployments
+
+#### Database Connection Failed
+```
+Communications link failure
+```
+**Solution**: Verify database is running and connection details are correct
+
+### Debugging
 ```bash
-# Verify JWT secret configuration
-echo $JWT_SECRET
+# Enable debug logging
+export LOGGING_LEVEL_COM_EXAMPLE_ITINERARLY_BE=DEBUG
 
-# Check token validation in logs
-docker-compose logs -f backend | grep JWT
+# View application logs
+docker-compose logs -f backend
 
-# Test token endpoint
-curl -X GET http://localhost:8080/api/v1/validate \
-  -H "Cookie: auth-token=YOUR_TOKEN"
+# Access database directly
+docker-compose exec db mysql -u root -p
 ```
 
-#### Database Connection Issues
-```bash
-# Check database container health
-docker-compose ps
-docker-compose logs -f db
-
-# Verify database connectivity
-docker exec -it itinerarly-db mysql -u root -p
-
-# Check connection pool status
-docker-compose logs -f backend | grep HikariPool
-```
-
-#### Token Limit Issues
-```bash
-# Check remaining tokens
-curl -X GET http://localhost:8080/api/v1/tokens/remaining \
-  -H "Cookie: auth-token=YOUR_TOKEN"
-
-# Force token refresh (for testing)
-curl -X POST http://localhost:8080/api/v1/tokens/consume \
-  -H "Cookie: auth-token=YOUR_TOKEN"
-```
-
-### Debug Mode Setup
-```bash
-# Run with debug logging
-docker-compose -f docker-compose.yml -f docker-compose.dev.yml up
-
-# Enable SQL logging
-# Set in application-dev.properties:
-spring.jpa.show-sql=true
-logging.level.org.springframework.security=DEBUG
-```
-
-### Performance Monitoring
-```bash
-# Monitor container resources
-docker stats itinerarly-backend itinerarly-db
-
-# Check application metrics
-curl http://localhost:8080/actuator/metrics
-
-# Database performance
-docker exec -it itinerarly-db mysqladmin processlist
-```
-
-##  Development Workflow
-
-### Setting Up Development Environment
-1. Clone repository and setup environment variables
-2. Start development containers: `docker-compose -f docker-compose.yml -f docker-compose.dev.yml up`
-3. Access Swagger UI at http://localhost:8080/swagger-ui/index.html
-4. Test OAuth2 flows with configured providers
-5. Monitor logs for debugging: `docker-compose logs -f backend`
-
-### Making Changes
-1. Create feature branch from main
-2. Implement changes with appropriate tests
-3. Run test suite: `mvn test`
-4. Update documentation if needed
-5. Test with Docker containers
-6. Submit pull request with detailed description
-
-### Testing Strategy
-- Unit tests for individual components
-- Integration tests for OAuth2 flows
-- Repository tests for data layer
-- End-to-end tests for complete workflows
-- Security testing for authentication flows
-
-##  License
+## 📄 License
 
 This project is licensed under the MIT License - see the LICENSE file for details.
 
-##  Support and Contributing
+## 🤝 Contributing
 
-### Getting Help
-- **Issues**: Create detailed GitHub issues with logs and steps to reproduce
-- **Documentation**: Check this README and inline code documentation
-- **Logs**: Review Docker container logs for debugging information
-- **Community**: Contribute to discussions and improvements
+1. Fork the repository
+2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
+3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
+4. Push to the branch (`git push origin feature/AmazingFeature`)
+5. Open a Pull Request
 
-### Contributing Guidelines
-1. Fork the repository and create feature branches
-2. Follow existing code style and conventions
-3. Add comprehensive tests for new features
-4. Update documentation for API changes
-5. Ensure all tests pass before submitting PR
-6. Include detailed PR description with testing instructions
+## 📞 Support
 
-### Code Quality Standards
-- Comprehensive test coverage (aim for 80%+)
-- Proper error handling and logging
-- Security best practices implementation
-- Documentation for public APIs
-- Docker compatibility and optimization
+For support and questions:
+- Create an issue in the repository
+- Contact the development team
+- Check the troubleshooting section above
+
+---
+
+**Current Status**: ✅ Production Ready
+**Last Updated**: August 2025
+**Version**: 1.0.0

@@ -1,49 +1,82 @@
 version: '3.8'
 
-# Production override for docker-compose.yml
-# Use with: docker-compose -f docker-compose.yml -f docker-compose.prod.yml up
+networks:
+  itinerarly-prod-network:
+    driver: bridge
+
+volumes:
+  mysql-prod-data:
+    driver: local
 
 services:
   backend:
+    build: 
+      context: .
+      dockerfile: Dockerfile
+    container_name: itinerarly-backend-prod
+    ports:
+      - "${BACKEND_PORT:-8080}:8080"
     environment:
       - SPRING_PROFILES_ACTIVE=prod
-      - SPRING_JPA_HIBERNATE_DDL_AUTO=validate
-      - SPRING_JPA_SHOW_SQL=false
-      - LOGGING_LEVEL_ORG_SPRINGFRAMEWORK_SECURITY=WARN
+      - SPRING_DATASOURCE_URL=jdbc:mysql://db:3306/${DB_NAME}?useSSL=false&serverTimezone=UTC&allowPublicKeyRetrieval=true
+      - SPRING_DATASOURCE_USERNAME=${DB_USERNAME}
+      - SPRING_DATASOURCE_PASSWORD=${DB_PASSWORD}
+      - SPRING_JPA_HIBERNATE_DDL_AUTO=${SPRING_JPA_HIBERNATE_DDL_AUTO}
+      - SPRING_JPA_SHOW_SQL=${SPRING_JPA_SHOW_SQL}
+      - JWT_SECRET=${JWT_SECRET}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET}
+      - GITHUB_CLIENT_ID=${GITHUB_CLIENT_ID}
+      - GITHUB_CLIENT_SECRET=${GITHUB_CLIENT_SECRET}
+      - APP_DAILY_TOKEN_LIMIT=${APP_DAILY_TOKEN_LIMIT}
+      - FRONTEND_URL=${FRONTEND_URL}
+    depends_on:
+      db:
+        condition: service_healthy
+    restart: unless-stopped
+    networks:
+      - itinerarly-prod-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:8080/api/v1/start"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
     deploy:
-      replicas: 2
       resources:
         limits:
-          memory: 2G
-          cpus: '1.0'
-        reservations:
           memory: 1G
           cpus: '0.5'
-      restart_policy:
-        condition: on-failure
-        delay: 5s
-        max_attempts: 3
-    healthcheck:
-      interval: 15s
-      timeout: 5s
-      retries: 5
-      start_period: 30s
-
-  db:
-    environment:
-      - MYSQL_INNODB_BUFFER_POOL_SIZE=512M
-    volumes:
-      - db_prod_data:/var/lib/mysql
-      - ./docker/mysql/logs:/var/log/mysql
-    deploy:
-      resources:
-        limits:
-          memory: 2G
-          cpus: '1.0'
         reservations:
           memory: 512M
           cpus: '0.25'
 
-volumes:
-  db_prod_data:
-    driver: local
+  db:
+    image: mysql:8.0
+    container_name: itinerarly-db-prod
+    environment:
+      - MYSQL_ROOT_PASSWORD=${DB_ROOT_PASSWORD}
+      - MYSQL_DATABASE=${DB_NAME}
+      - MYSQL_USER=${DB_USERNAME}
+      - MYSQL_PASSWORD=${DB_PASSWORD}
+    volumes:
+      - mysql-prod-data:/var/lib/mysql
+      - ./docker/mysql/conf.d:/etc/mysql/conf.d:ro
+      - ./docker/mysql/init:/docker-entrypoint-initdb.d:ro
+    restart: unless-stopped
+    networks:
+      - itinerarly-prod-network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${DB_ROOT_PASSWORD}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
+    deploy:
+      resources:
+        limits:
+          memory: 1G
+          cpus: '0.5'
+        reservations:
+          memory: 512M
+          cpus: '0.25'

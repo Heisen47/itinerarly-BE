@@ -6,6 +6,7 @@ import com.example.itinerarly_BE.utl.JwtTokenUtil;
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.http.MediaType;
@@ -26,6 +27,9 @@ public class SecurityConfig {
 
     private final JwtTokenUtil jwtTokenUtil;
     private final UserRepository userRepository;
+
+    @Value("${app.frontend.url}")
+    private String frontendUrl;
 
     @Autowired
     public SecurityConfig(JwtTokenUtil jwtTokenUtil, UserRepository userRepository) {
@@ -69,42 +73,24 @@ public class SecurityConfig {
                 String username = null;
                 String avatarUrl = null;
 
+                // Google OAuth
                 if (oauth2User.getAttribute("iss") != null && oauth2User.getAttribute("iss").toString().contains("google")) {
                     oauthId = oauth2User.getAttribute("sub").toString();
                     provider = "google";
                     email = oauth2User.getAttribute("email");
                     name = oauth2User.getAttribute("name");
-                    username = null;
-                    avatarUrl = oauth2User.getAttribute("picture");
-                } else if (oauth2User.getAttribute("login") != null && oauth2User.getAttribute("avatar_url") != null) {
+                    username = oauth2User.getAttribute("email"); // Use email as username for Google
+                    avatarUrl = oauth2User.getAttribute("picture"); // Fix: was null before
+                }
+                // GitHub OAuth
+                else if (oauth2User.getAttribute("login") != null && oauth2User.getAttribute("avatar_url") != null) {
                     oauthId = oauth2User.getAttribute("id").toString();
                     provider = "github";
                     email = oauth2User.getAttribute("email");
                     name = oauth2User.getAttribute("name");
                     username = oauth2User.getAttribute("login");
                     avatarUrl = oauth2User.getAttribute("avatar_url");
-               }
-//                else if (oauth2User.getAttribute("id") != null && oauth2User.getAttribute("picture") != null) {
-//                    oauthId = oauth2User.getAttribute("id").toString();
-//                    provider = "facebook";
-//                    email = oauth2User.getAttribute("email");
-//                    name = oauth2User.getAttribute("name");
-//                    username = oauth2User.getAttribute("name");
-//                    Object pictureObj = oauth2User.getAttribute("picture");
-//                    if (pictureObj instanceof java.util.Map) {
-//                        Object dataObj = ((java.util.Map<?, ?>) pictureObj).get("data");
-//                        if (dataObj instanceof java.util.Map) {
-//                            avatarUrl = (String) ((java.util.Map<?, ?>) dataObj).get("url");
-//                        }
-//                    }
-//                } else if (oauth2User.getAttribute("screen_name") != null) {
-//                    oauthId = oauth2User.getAttribute("id_str") != null ? oauth2User.getAttribute("id_str").toString() : oauth2User.getAttribute("id").toString();
-//                    provider = "twitter";
-//                    email = oauth2User.getAttribute("email");
-//                    name = oauth2User.getAttribute("name");
-//                    username = oauth2User.getAttribute("screen_name");
-//                    avatarUrl = oauth2User.getAttribute("profile_image_url_https");
-//                }
+                }
 
                 User user = userRepository.findByOauthId(oauthId)
                         .orElse(new User());
@@ -130,7 +116,9 @@ public class SecurityConfig {
                 cookie.setPath("/");
                 cookie.setMaxAge(86400);
                 response.addCookie(cookie);
-                response.sendRedirect("http://localhost:3000/start");
+
+                // Use dynamic frontend URL instead of hardcoded localhost
+                response.sendRedirect(frontendUrl + "/start");
             } catch (Exception ex) {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);
