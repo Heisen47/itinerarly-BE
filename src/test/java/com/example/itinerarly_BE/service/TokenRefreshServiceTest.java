@@ -12,9 +12,9 @@ import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
 import java.time.LocalDate;
-import java.util.Optional;
+import java.util.Arrays;
+import java.util.List;
 
-import static org.junit.jupiter.api.Assertions.*;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.*;
 
@@ -31,55 +31,79 @@ class TokenRefreshServiceTest {
     @InjectMocks
     private TokenRefreshService tokenRefreshService;
 
-    private User testUser;
+    private User testUser1;
+    private User testUser2;
 
     @BeforeEach
     void setUp() {
-        testUser = new User();
-        testUser.setId(1L);
-        testUser.setEmail("test@example.com");
-        testUser.setDailyTokens(5);
-        testUser.setLastTokenRefresh(LocalDate.now().minusDays(1));
+        testUser1 = new User();
+        testUser1.setId(1L);
+        testUser1.setEmail("test1@example.com");
+        testUser1.setOauthId("oauth-1");
+        testUser1.setDailyTokens(5);
+        testUser1.setLastTokenRefresh(LocalDate.now().minusDays(1));
+
+        testUser2 = new User();
+        testUser2.setId(2L);
+        testUser2.setEmail("test2@example.com");
+        testUser2.setOauthId("oauth-2");
+        testUser2.setDailyTokens(3);
+        testUser2.setLastTokenRefresh(LocalDate.now().minusDays(1));
+
+        when(tokenConfig.getDailyTokenLimit()).thenReturn(10);
     }
 
     @Test
-    void shouldRefreshTokensWhenLastRefreshWasYesterday() {
+    void shouldRefreshAllUsersTokens() {
         // Given
-        when(tokenConfig.getDailyTokenLimit()).thenReturn(10);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
-        when(userRepository.save(any(User.class))).thenReturn(testUser);
+        List<User> users = Arrays.asList(testUser1, testUser2);
+        when(userRepository.findAll()).thenReturn(users);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
         // When
-        tokenRefreshService.refreshDailyTokensIfNeeded(1L);
+        tokenRefreshService.refreshAllUserTokens();
 
         // Then
         verify(userRepository).save(argThat(user -> 
             user.getDailyTokens() == 10 && 
-            user.getLastTokenRefresh().equals(LocalDate.now())
+            user.getLastTokenRefresh().equals(LocalDate.now()) &&
+            user.getId().equals(1L)
         ));
+        verify(userRepository).save(argThat(user ->
+            user.getDailyTokens() == 10 &&
+            user.getLastTokenRefresh().equals(LocalDate.now()) &&
+            user.getId().equals(2L)
+        ));
+        verify(userRepository, times(2)).save(any(User.class));
     }
 
     @Test
-    void shouldNotRefreshTokensWhenAlreadyRefreshedToday() {
+    void shouldHandleEmptyUserList() {
         // Given
-        testUser.setLastTokenRefresh(LocalDate.now());
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findAll()).thenReturn(Arrays.asList());
 
         // When
-        tokenRefreshService.refreshDailyTokensIfNeeded(1L);
+        tokenRefreshService.refreshAllUserTokens();
 
         // Then
         verify(userRepository, never()).save(any(User.class));
     }
 
     @Test
-    void shouldThrowExceptionWhenUserNotFound() {
+    void shouldRefreshEvenWhenUserHasMaxTokens() {
         // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
+        testUser1.setDailyTokens(10); // Already at max
+        List<User> users = Arrays.asList(testUser1);
+        when(userRepository.findAll()).thenReturn(users);
+        when(userRepository.save(any(User.class))).thenAnswer(invocation -> invocation.getArgument(0));
 
-        // When & Then
-        assertThrows(RuntimeException.class, () -> 
-            tokenRefreshService.refreshDailyTokensIfNeeded(1L)
-        );
+        // When
+        tokenRefreshService.refreshAllUserTokens();
+
+        // Then
+        verify(userRepository).save(argThat(user ->
+            user.getDailyTokens() == 10 &&
+            user.getLastTokenRefresh().equals(LocalDate.now())
+        ));
     }
 }

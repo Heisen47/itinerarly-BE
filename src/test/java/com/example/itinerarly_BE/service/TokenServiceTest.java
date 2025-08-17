@@ -1,5 +1,6 @@
 package com.example.itinerarly_BE.service;
 
+import com.example.itinerarly_BE.config.TokenConfig;
 import com.example.itinerarly_BE.model.User;
 import com.example.itinerarly_BE.repository.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.time.LocalDate;
 import java.util.Optional;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -23,6 +25,9 @@ class TokenServiceTest {
     @Mock
     private UserRepository userRepository;
 
+    @Mock
+    private TokenConfig tokenConfig;
+
     @InjectMocks
     private TokenService tokenService;
 
@@ -33,42 +38,45 @@ class TokenServiceTest {
         testUser = new User();
         testUser.setId(1L);
         testUser.setEmail("test@example.com");
+        testUser.setOauthId("test-oauth-id");
         testUser.setDailyTokens(5);
+        testUser.setLastTokenRefresh(LocalDate.now());
+
+        when(tokenConfig.getDailyTokenLimit()).thenReturn(10);
     }
 
     @Test
-    void shouldReturnTrueWhenUserHasTokens() {
+    void shouldReturnRemainingTokensWhenUserExists() {
         // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByOauthId("test-oauth-id")).thenReturn(Optional.of(testUser));
 
         // When
-        boolean hasTokens = tokenService.hasTokensAvailable(1L);
+        int remainingTokens = tokenService.getRemainingTokens("test-oauth-id");
 
         // Then
-        assertTrue(hasTokens);
+        assertEquals(5, remainingTokens);
     }
 
     @Test
-    void shouldReturnFalseWhenUserHasNoTokens() {
+    void shouldReturnZeroWhenUserNotFound() {
         // Given
-        testUser.setDailyTokens(0);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByOauthId("nonexistent-id")).thenReturn(Optional.empty());
 
         // When
-        boolean hasTokens = tokenService.hasTokensAvailable(1L);
+        int remainingTokens = tokenService.getRemainingTokens("nonexistent-id");
 
         // Then
-        assertFalse(hasTokens);
+        assertEquals(0, remainingTokens);
     }
 
     @Test
-    void shouldDecrementTokensWhenUsed() {
+    void shouldConsumeTokenSuccessfully() {
         // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByOauthId("test-oauth-id")).thenReturn(Optional.of(testUser));
         when(userRepository.save(any(User.class))).thenReturn(testUser);
 
         // When
-        boolean result = tokenService.useToken(1L);
+        boolean result = tokenService.consumeToken("test-oauth-id");
 
         // Then
         assertTrue(result);
@@ -76,27 +84,46 @@ class TokenServiceTest {
     }
 
     @Test
-    void shouldNotDecrementWhenNoTokensAvailable() {
+    void shouldNotConsumeTokenWhenNoTokensAvailable() {
         // Given
         testUser.setDailyTokens(0);
-        when(userRepository.findById(1L)).thenReturn(Optional.of(testUser));
+        when(userRepository.findByOauthId("test-oauth-id")).thenReturn(Optional.of(testUser));
 
         // When
-        boolean result = tokenService.useToken(1L);
+        boolean result = tokenService.consumeToken("test-oauth-id");
+
+        // Then
+        assertFalse(result);
+    }
+
+    @Test
+    void shouldRefreshTokensWhenNewDay() {
+        // Given
+        testUser.setLastTokenRefresh(LocalDate.now().minusDays(1));
+        testUser.setDailyTokens(2);
+        when(userRepository.findByOauthId("test-oauth-id")).thenReturn(Optional.of(testUser));
+        when(userRepository.save(any(User.class))).thenReturn(testUser);
+
+        // When
+        int remainingTokens = tokenService.getRemainingTokens("test-oauth-id");
+
+        // Then
+        assertEquals(10, remainingTokens);
+        verify(userRepository).save(argThat(user ->
+            user.getDailyTokens() == 10 && user.getLastTokenRefresh().equals(LocalDate.now())
+        ));
+    }
+
+    @Test
+    void shouldReturnFalseWhenUserNotFoundForConsume() {
+        // Given
+        when(userRepository.findByOauthId("nonexistent-id")).thenReturn(Optional.empty());
+
+        // When
+        boolean result = tokenService.consumeToken("nonexistent-id");
 
         // Then
         assertFalse(result);
         verify(userRepository, never()).save(any(User.class));
-    }
-
-    @Test
-    void shouldThrowExceptionWhenUserNotFound() {
-        // Given
-        when(userRepository.findById(1L)).thenReturn(Optional.empty());
-
-        // When & Then
-        assertThrows(RuntimeException.class, () -> 
-            tokenService.hasTokensAvailable(1L)
-        );
     }
 }
