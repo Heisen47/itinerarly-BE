@@ -19,7 +19,8 @@ public class CorsConfig {
             public void addCorsMappings(CorsRegistry registry) {
                 registry.addMapping("/api/**")
                         .allowedOrigins(
-                            "http://localhost:3000", // For local development
+                            "http://localhost:3000",
+                            "https://itinerarly-fe.vercel.app",
                             frontendUrl
                         )
                         .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
@@ -30,6 +31,7 @@ public class CorsConfig {
                 registry.addMapping("/oauth2/**")
                         .allowedOrigins(
                             "http://localhost:3000",
+                            "https://itinerarly-fe.vercel.app",
                             frontendUrl
                         )
                         .allowedMethods("GET", "POST", "OPTIONS")
