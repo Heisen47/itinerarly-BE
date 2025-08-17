@@ -6,7 +6,7 @@ networks:
 
 services:
   backend:
-    build:
+    build: 
       context: .
       dockerfile: Dockerfile
     container_name: itinerarly-backend

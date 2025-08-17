@@ -45,7 +45,7 @@ public class SecurityConfig {
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
                 .authorizeHttpRequests(auth -> {
-                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui/**", "/v3/api-docs/**", "/oauth2/authorization/**", "/api/v1/start").permitAll();
+                    auth.requestMatchers("/", "/favicon.ico", "/swagger-ui/**", "/v3/api-docs/**", "/oauth2/authorization/**", "/api/v1/start" ,"/test").permitAll();
                     auth.requestMatchers("/api/**").authenticated();
                     auth.anyRequest().authenticated();
                 })
@@ -69,7 +69,6 @@ public class SecurityConfig {
                 String username = null;
                 String avatarUrl = null;
 
-                // Handle Google OAuth2
                 if (oauth2User.getAttribute("iss") != null && oauth2User.getAttribute("iss").toString().contains("google")) {
                     oauthId = oauth2User.getAttribute("sub").toString();
                     provider = "google";
@@ -77,16 +76,35 @@ public class SecurityConfig {
                     name = oauth2User.getAttribute("name");
                     username = null;
                     avatarUrl = oauth2User.getAttribute("picture");
-                }
-                // Handle GitHub OAuth2
-                else if (oauth2User.getAttribute("login") != null && oauth2User.getAttribute("avatar_url") != null) {
+                } else if (oauth2User.getAttribute("login") != null && oauth2User.getAttribute("avatar_url") != null) {
                     oauthId = oauth2User.getAttribute("id").toString();
                     provider = "github";
                     email = oauth2User.getAttribute("email");
                     name = oauth2User.getAttribute("name");
                     username = oauth2User.getAttribute("login");
                     avatarUrl = oauth2User.getAttribute("avatar_url");
-                }
+               }
+//                else if (oauth2User.getAttribute("id") != null && oauth2User.getAttribute("picture") != null) {
+//                    oauthId = oauth2User.getAttribute("id").toString();
+//                    provider = "facebook";
+//                    email = oauth2User.getAttribute("email");
+//                    name = oauth2User.getAttribute("name");
+//                    username = oauth2User.getAttribute("name");
+//                    Object pictureObj = oauth2User.getAttribute("picture");
+//                    if (pictureObj instanceof java.util.Map) {
+//                        Object dataObj = ((java.util.Map<?, ?>) pictureObj).get("data");
+//                        if (dataObj instanceof java.util.Map) {
+//                            avatarUrl = (String) ((java.util.Map<?, ?>) dataObj).get("url");
+//                        }
+//                    }
+//                } else if (oauth2User.getAttribute("screen_name") != null) {
+//                    oauthId = oauth2User.getAttribute("id_str") != null ? oauth2User.getAttribute("id_str").toString() : oauth2User.getAttribute("id").toString();
+//                    provider = "twitter";
+//                    email = oauth2User.getAttribute("email");
+//                    name = oauth2User.getAttribute("name");
+//                    username = oauth2User.getAttribute("screen_name");
+//                    avatarUrl = oauth2User.getAttribute("profile_image_url_https");
+//                }
 
                 User user = userRepository.findByOauthId(oauthId)
                         .orElse(new User());
@@ -112,14 +130,7 @@ public class SecurityConfig {
                 cookie.setPath("/");
                 cookie.setMaxAge(86400);
                 response.addCookie(cookie);
-
-                // Use environment variable for frontend URL
-                String frontendUrl = System.getenv("FRONTEND_URL");
-                if (frontendUrl == null || frontendUrl.isEmpty()) {
-                    frontendUrl = "http://localhost:3000"; // fallback for development
-                }
-                response.sendRedirect(frontendUrl + "/start");
-
+                response.sendRedirect("http://localhost:3000/start");
             } catch (Exception ex) {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
                 response.setContentType(MediaType.APPLICATION_JSON_VALUE);

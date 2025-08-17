@@ -28,13 +28,13 @@ public class JwtTokenUtil {
             claims.put("email", oauth2User.getAttribute("email"));
             claims.put("login", oauth2User.getAttribute("login"));
             claims.put("id", oauth2User.getAttribute("id"));
-
+            
             // Fix avatar URL handling for different providers
             String avatarUrl = oauth2User.getAttribute("avatar_url"); // GitHub
             if (avatarUrl == null) {
                 avatarUrl = oauth2User.getAttribute("picture"); // Google
             }
-
+            
             claims.put("avatar", avatarUrl);
         }
 
