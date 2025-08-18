@@ -12,7 +12,6 @@ import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
 
 import java.util.Arrays;
-import java.util.List;
 
 @Configuration
 public class CorsConfig {
@@ -28,34 +27,42 @@ public class CorsConfig {
 
         CorsConfiguration configuration = new CorsConfiguration();
 
-        // Allow specific origins
+        // Allow specific origins with more comprehensive patterns
         configuration.setAllowedOriginPatterns(Arrays.asList(
             "http://localhost:3000",
+            "http://localhost:*",
             "https://itinerarly-fe.vercel.app",
-            frontendUrl
+            "https://*.vercel.app",
+            frontendUrl,
+            frontendUrl.replace("https://", "https://*.") // Allow subdomains
         ));
 
-        // Allow all methods
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        // Allow all methods including OPTIONS for preflight
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH"));
 
-        // Allow all headers
+        // Allow all headers including custom auth headers
         configuration.setAllowedHeaders(Arrays.asList("*"));
 
         // This is crucial for cross-domain cookies to work
         configuration.setAllowCredentials(true);
 
-        // Expose headers that might be needed
+        // Expose headers that might be needed for authentication
         configuration.setExposedHeaders(Arrays.asList(
             "Set-Cookie",
             "Authorization",
-            "Access-Control-Allow-Credentials"
+            "X-Auth-Token",
+            "Access-Control-Allow-Credentials",
+            "Access-Control-Allow-Origin"
         ));
+
+        // Set max age for preflight requests
+        configuration.setMaxAge(3600L);
 
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", configuration);
 
-        logger.info("CORS configuration completed - AllowCredentials: true, Origins: {}",
-            configuration.getAllowedOriginPatterns());
+        logger.info("CORS configuration completed - AllowCredentials: true, Origins: {}, MaxAge: {}",
+            configuration.getAllowedOriginPatterns(), configuration.getMaxAge());
 
         return source;
     }
@@ -70,13 +77,16 @@ public class CorsConfig {
                 registry.addMapping("/**")
                         .allowedOriginPatterns(
                             "http://localhost:3000",
+                            "http://localhost:*",
                             "https://itinerarly-fe.vercel.app",
-                            frontendUrl
+                            "https://*.vercel.app",
+                            frontendUrl,
+                            frontendUrl.replace("https://", "https://*.") // Allow subdomains
                         )
-                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS")
+                        .allowedMethods("GET", "POST", "PUT", "DELETE", "OPTIONS", "HEAD", "PATCH")
                         .allowedHeaders("*")
                         .allowCredentials(true)
-                        .exposedHeaders("Set-Cookie", "Authorization");
+                        .exposedHeaders("Set-Cookie", "Authorization", "X-Auth-Token");
 
                 logger.info("CORS mappings configured for cross-domain cookie support");
             }
