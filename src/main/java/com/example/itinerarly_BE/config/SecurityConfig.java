@@ -52,6 +52,11 @@ public class SecurityConfig {
                         .ignoringRequestMatchers("/api/v1/logout", "/api/**", "/oauth2/**", "/login/**")
                         .csrfTokenRepository(CookieCsrfTokenRepository.withHttpOnlyFalse())
                 )
+                .sessionManagement(session -> session
+                        .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
+                        .maximumSessions(1)
+                        .maxSessionsPreventsLogins(false)
+                )
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/favicon.ico", "/swagger-ui/**", "/v3/api-docs/**",
                             "/oauth2/authorization/**", "/api/v1/start", "/test", "/login/**").permitAll();
@@ -151,18 +156,47 @@ public class SecurityConfig {
                 logger.info("JWT token generated successfully. Length: {}", jwt.length());
                 logger.info("JWT token (first 50 chars): {}...", jwt.substring(0, Math.min(50, jwt.length())));
 
-                // Create cross-domain compatible cookies
-                Cookie authCookie = new Cookie("auth-token", jwt);
-                authCookie.setHttpOnly(true);
-                authCookie.setPath("/");
-                authCookie.setMaxAge(86400); // 24 hours
-                authCookie.setSecure(true);
-                authCookie.setAttribute("sameSite", "None");
+                // Store JWT in session for server-side authentication
+                request.getSession().setAttribute("jwt_token", jwt);
+                request.getSession().setAttribute("user_id", savedUser.getId());
+                request.getSession().setAttribute("user_email", savedUser.getEmail());
+                request.getSession().setAttribute("user_name", savedUser.getName());
 
-                logger.info("Cross-domain cookie configured - Name: {}, Path: {}, MaxAge: {}, HttpOnly: {}, Secure: true, SameSite: None",
-                    authCookie.getName(), authCookie.getPath(), authCookie.getMaxAge(), authCookie.isHttpOnly());
+                logger.info("User data stored in session. Session ID: {}", request.getSession().getId());
 
-                response.addCookie(authCookie);
+                // Create HttpOnly JWT cookie for secure authentication
+                Cookie jwtCookie = new Cookie("auth-token", jwt);
+                jwtCookie.setHttpOnly(true);  // Keep JWT secure
+                jwtCookie.setPath("/");
+                jwtCookie.setMaxAge(86400); // 24 hours
+                jwtCookie.setSecure(true);
+                jwtCookie.setAttribute("SameSite", "None");
+
+                response.addCookie(jwtCookie);
+
+                // Create non-HttpOnly indicator cookie for JavaScript detection
+                Cookie loginIndicator = new Cookie("isLoggedIn", "true");
+                loginIndicator.setHttpOnly(false);  // Allow JavaScript access
+                loginIndicator.setPath("/");
+                loginIndicator.setMaxAge(86400); // 24 hours
+                loginIndicator.setSecure(true);
+                loginIndicator.setAttribute("SameSite", "None");
+
+                response.addCookie(loginIndicator);
+
+                // Add user info cookie for frontend (non-sensitive data)
+                Cookie userInfoCookie = new Cookie("userInfo", String.format("{\"name\":\"%s\",\"email\":\"%s\",\"provider\":\"%s\"}",
+                    savedUser.getName(), savedUser.getEmail(), savedUser.getProvider()));
+                userInfoCookie.setHttpOnly(false);
+                userInfoCookie.setPath("/");
+                userInfoCookie.setMaxAge(86400);
+                userInfoCookie.setSecure(true);
+                userInfoCookie.setAttribute("SameSite", "None");
+
+                response.addCookie(userInfoCookie);
+
+                logger.info("Session-based authentication configured - JWT stored in session, indicator cookies set");
+                logger.info("JSESSIONID will be automatically generated: {}", request.getSession().getId());
 
                 // Add explicit Set-Cookie headers for better cross-domain compatibility
                 response.addHeader("Set-Cookie", String.format("auth-token=%s; Path=/; Max-Age=86400; Secure; SameSite=None; HttpOnly=false", jwt));
