@@ -40,15 +40,15 @@ services:
       - "8081:8080"  # Different port for dev
     environment:
       SPRING_PROFILES_ACTIVE: dev
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-itinerarly_dev}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATASOURCE_USERNAME: ${MYSQL_USER:-devuser}
-      SPRING_DATASOURCE_PASSWORD: ${MYSQL_PASSWORD:-devpassword}
-      JWT_SECRET: ${JWT_SECRET:-dev-jwt-secret-key}
+      db-url: jdbc:mysql://mysql:3306/${MYSQL_DATABASE:-itinerarly_dev}?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      db-username: ${MYSQL_USER:-devuser}
+      db-password: ${MYSQL_PASSWORD:-devpassword}
+      JWT-Secret: ${JWT-Secret:-dev-jwt-secret-key}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
-      GITHUB_CLIENT_ID: ${GITHUB_CLIENT_ID}
-      GITHUB_CLIENT_SECRET: ${GITHUB_CLIENT_SECRET}
-      GOOGLE_CLIENT_ID: ${GOOGLE_CLIENT_ID}
-      GOOGLE_CLIENT_SECRET: ${GOOGLE_CLIENT_SECRET}
+      github-client-id: ${github-client-id}
+      github-secret: ${github-secret}
+      google-client-id: ${google-client-id}
+      google-secret: ${google-secret}
       APP_DAILY_TOKEN_LIMIT: ${APP_DAILY_TOKEN_LIMIT:-10}
     depends_on:
       mysql:
