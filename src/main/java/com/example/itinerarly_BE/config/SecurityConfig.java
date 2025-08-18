@@ -213,7 +213,7 @@ public class SecurityConfig {
                 logger.info("Cross-domain CORS headers added to response");
                 logger.info("Frontend URL for CORS: {}", frontendUrl);
 
-                // Ensure frontend URL has trailing slash removed if present, then add /start
+
                 String redirectUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;
                 redirectUrl += "/start";
 
