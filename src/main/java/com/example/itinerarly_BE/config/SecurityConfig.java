@@ -151,38 +151,27 @@ public class SecurityConfig {
                 logger.info("JWT token generated successfully. Length: {}", jwt.length());
                 logger.info("JWT token (first 50 chars): {}...", jwt.substring(0, Math.min(50, jwt.length())));
 
-                // Create cookie with detailed logging
+                // Create cookie with cross-domain support
                 Cookie cookie = new Cookie("auth-token", jwt);
-                cookie.setHttpOnly(false);
+                cookie.setHttpOnly(false); // Allow JavaScript access for cross-domain scenarios
                 cookie.setPath("/");
-                cookie.setMaxAge(86400);
+                cookie.setMaxAge(86400); // 24 hours
 
-                // Check if we're in production (HTTPS) or development
-                String origin = request.getHeader("Origin");
-                String referer = request.getHeader("Referer");
-                boolean isProduction = frontendUrl.startsWith("https://");
+                // For cross-domain cookies to work, we need SameSite=None and Secure=true
+                cookie.setSecure(true); // Required for SameSite=None
+                cookie.setAttribute("SameSite", "None"); // Allow cross-site requests
 
-                logger.info("Request Origin: {}", origin);
-                logger.info("Request Referer: {}", referer);
-                logger.info("Is Production (HTTPS): {}", isProduction);
-
-                if (isProduction) {
-                    cookie.setSecure(true);
-                    cookie.setAttribute("SameSite", "None");
-                    logger.info("Production mode: Setting Secure=true, SameSite=None");
-                } else {
-                    cookie.setSecure(false);
-                    logger.info("Development mode: Setting Secure=false");
-                }
-
-                logger.info("Cookie settings - Name: {}, Path: {}, MaxAge: {}, HttpOnly: {}, Secure: {}",
-                    cookie.getName(), cookie.getPath(), cookie.getMaxAge(), cookie.isHttpOnly(), cookie.getSecure());
+                logger.info("Cross-domain cookie configured - Name: {}, Path: {}, MaxAge: {}, HttpOnly: {}, Secure: true, SameSite: None",
+                    cookie.getName(), cookie.getPath(), cookie.getMaxAge(), cookie.isHttpOnly());
 
                 response.addCookie(cookie);
-                logger.info("Cookie added to response");
 
-                // Log response headers before redirect
-                logger.info("Response headers before redirect: {}", response.getHeaderNames());
+                // Add explicit Set-Cookie header with all necessary attributes for cross-domain
+                String cookieHeader = String.format("auth-token=%s; Path=/; Max-Age=86400; Secure; SameSite=None; HttpOnly=false", jwt);
+                response.addHeader("Set-Cookie", cookieHeader);
+
+                logger.info("Cross-domain cookie and header added to response");
+                logger.info("Set-Cookie header: {}", cookieHeader);
 
                 // Ensure frontend URL has trailing slash removed if present, then add /start
                 String redirectUrl = frontendUrl.endsWith("/") ? frontendUrl.substring(0, frontendUrl.length() - 1) : frontendUrl;

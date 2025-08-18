@@ -5,8 +5,14 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import org.springframework.web.servlet.config.annotation.CorsRegistry;
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurer;
+
+import java.util.Arrays;
+import java.util.List;
 
 @Configuration
 public class CorsConfig {
@@ -17,14 +23,52 @@ public class CorsConfig {
     private String frontendUrl;
 
     @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        logger.info("Configuring CORS for cross-domain cookie support with frontend URL: {}", frontendUrl);
+
+        CorsConfiguration configuration = new CorsConfiguration();
+
+        // Allow specific origins
+        configuration.setAllowedOriginPatterns(Arrays.asList(
+            "http://localhost:3000",
+            "https://itinerarly-fe.vercel.app",
+            frontendUrl
+        ));
+
+        // Allow all methods
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+
+        // Allow all headers
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+
+        // This is crucial for cross-domain cookies to work
+        configuration.setAllowCredentials(true);
+
+        // Expose headers that might be needed
+        configuration.setExposedHeaders(Arrays.asList(
+            "Set-Cookie",
+            "Authorization",
+            "Access-Control-Allow-Credentials"
+        ));
+
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+
+        logger.info("CORS configuration completed - AllowCredentials: true, Origins: {}",
+            configuration.getAllowedOriginPatterns());
+
+        return source;
+    }
+
+    @Bean
     public WebMvcConfigurer corsConfigurer() {
         return new WebMvcConfigurer() {
             @Override
             public void addCorsMappings(CorsRegistry registry) {
-                logger.info("Configuring CORS for frontend URL: {}", frontendUrl);
+                logger.info("Adding CORS mappings for frontend URL: {}", frontendUrl);
 
-                registry.addMapping("/api/**")
-                        .allowedOrigins(
+                registry.addMapping("/**")
+                        .allowedOriginPatterns(
                             "http://localhost:3000",
                             "https://itinerarly-fe.vercel.app",
                             frontendUrl
@@ -34,40 +78,7 @@ public class CorsConfig {
                         .allowCredentials(true)
                         .exposedHeaders("Set-Cookie", "Authorization");
 
-                registry.addMapping("/oauth2/**")
-                        .allowedOrigins(
-                            "http://localhost:3000",
-                            "https://itinerarly-fe.vercel.app",
-                            frontendUrl
-                        )
-                        .allowedMethods("GET", "POST", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true)
-                        .exposedHeaders("Set-Cookie", "Authorization");
-
-
-                registry.addMapping("/login/**")
-                        .allowedOrigins(
-                            "http://localhost:3000",
-                            "https://itinerarly-fe.vercel.app",
-                            frontendUrl
-                        )
-                        .allowedMethods("GET", "POST", "OPTIONS")
-                        .allowedHeaders("*")
-                        .allowCredentials(true)
-                        .exposedHeaders("Set-Cookie", "Authorization");
-
-                registry.addMapping("/swagger-ui/**")
-                        .allowedOrigins("*")
-                        .allowedMethods("GET", "OPTIONS")
-                        .allowedHeaders("*");
-
-                registry.addMapping("/v3/api-docs/**")
-                        .allowedOrigins("*")
-                        .allowedMethods("GET", "OPTIONS")
-                        .allowedHeaders("*");
-
-                logger.info("CORS configuration completed");
+                logger.info("CORS mappings configured for cross-domain cookie support");
             }
         };
     }
