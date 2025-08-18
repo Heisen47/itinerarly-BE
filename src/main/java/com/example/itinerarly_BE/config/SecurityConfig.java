@@ -185,9 +185,12 @@ public class SecurityConfig {
 
                 response.addCookie(loginIndicator);
 
-                // Add user info cookie for frontend (non-sensitive data)
-                Cookie userInfoCookie = new Cookie("userInfo", String.format("{\"name\":\"%s\",\"email\":\"%s\",\"provider\":\"%s\"}",
-                    savedUser.getName(), savedUser.getEmail(), savedUser.getProvider()));
+                // Add user info cookie for frontend (non-sensitive data) - URL encode the JSON
+                String userInfoJson = String.format("{\"name\":\"%s\",\"email\":\"%s\",\"provider\":\"%s\"}",
+                    savedUser.getName(), savedUser.getEmail(), savedUser.getProvider());
+                String encodedUserInfo = java.net.URLEncoder.encode(userInfoJson, java.nio.charset.StandardCharsets.UTF_8);
+
+                Cookie userInfoCookie = new Cookie("userInfo", encodedUserInfo);
                 userInfoCookie.setHttpOnly(false);
                 userInfoCookie.setPath("/");
                 userInfoCookie.setMaxAge(86400);
@@ -199,12 +202,6 @@ public class SecurityConfig {
                 logger.info("Session-based authentication configured - JWT stored in session, indicator cookies set");
                 logger.info("JSESSIONID will be automatically generated: {}", request.getSession().getId());
 
-                // Add explicit Set-Cookie headers for better cross-domain compatibility
-                response.addHeader("Set-Cookie", String.format("auth-token=%s; Path=/; Max-Age=86400; Secure; SameSite=None; HttpOnly=false", jwt));
-                response.addHeader("Set-Cookie", String.format("authToken=%s; Path=/; Max-Age=86400; Secure; SameSite=None; HttpOnly=false", jwt));
-
-                logger.info("Added cross-domain Set-Cookie headers");
-
                 // Add comprehensive CORS headers for this specific response
                 response.setHeader("Access-Control-Allow-Origin", frontendUrl);
                 response.setHeader("Access-Control-Allow-Credentials", "true");
@@ -212,9 +209,6 @@ public class SecurityConfig {
                 response.setHeader("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Authorization,Cookie,Set-Cookie");
                 response.setHeader("Access-Control-Expose-Headers", "Set-Cookie,Authorization,X-Auth-Token,Access-Control-Allow-Credentials");
 
-                // Add the JWT token as headers (backup methods for frontend)
-                response.setHeader("X-Auth-Token", jwt);
-                response.setHeader("Authorization", "Bearer " + jwt);
 
                 logger.info("Cross-domain CORS headers added to response");
                 logger.info("Frontend URL for CORS: {}", frontendUrl);
