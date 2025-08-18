@@ -151,41 +151,37 @@ public class SecurityConfig {
                 logger.info("JWT token generated successfully. Length: {}", jwt.length());
                 logger.info("JWT token (first 50 chars): {}...", jwt.substring(0, Math.min(50, jwt.length())));
 
-                // Create multiple cookie formats for better cross-domain compatibility
-                Cookie cookie = new Cookie("auth-token", jwt);
-                cookie.setHttpOnly(false);
-                cookie.setPath("/");
-                cookie.setMaxAge(86400); // 24 hours
-                cookie.setSecure(true);
-                cookie.setAttribute("SameSite", "None");
+                // Create cross-domain compatible cookies
+                Cookie authCookie = new Cookie("auth-token", jwt);
+                authCookie.setHttpOnly(false);
+                authCookie.setPath("/");
+                authCookie.setMaxAge(86400); // 24 hours
+                authCookie.setSecure(true);
+                authCookie.setAttribute("SameSite", "None");
 
                 logger.info("Cross-domain cookie configured - Name: {}, Path: {}, MaxAge: {}, HttpOnly: {}, Secure: true, SameSite: None",
-                    cookie.getName(), cookie.getPath(), cookie.getMaxAge(), cookie.isHttpOnly());
+                    authCookie.getName(), authCookie.getPath(), authCookie.getMaxAge(), authCookie.isHttpOnly());
 
-                response.addCookie(cookie);
+                response.addCookie(authCookie);
 
-                // Add multiple Set-Cookie headers for better compatibility
-                String[] cookieHeaders = {
-                    String.format("auth-token=%s; Path=/; Max-Age=86400; Secure; SameSite=None", jwt),
-                    String.format("auth-token=%s; Path=/; Max-Age=86400; Secure; SameSite=None; Domain=.vercel.app", jwt),
-                    String.format("authToken=%s; Path=/; Max-Age=86400; Secure; SameSite=None", jwt)
-                };
+                // Add explicit Set-Cookie headers for better cross-domain compatibility
+                response.addHeader("Set-Cookie", String.format("auth-token=%s; Path=/; Max-Age=86400; Secure; SameSite=None; HttpOnly=false", jwt));
+                response.addHeader("Set-Cookie", String.format("authToken=%s; Path=/; Max-Age=86400; Secure; SameSite=None; HttpOnly=false", jwt));
 
-                for (String cookieHeader : cookieHeaders) {
-                    response.addHeader("Set-Cookie", cookieHeader);
-                    logger.info("Added Set-Cookie header: {}", cookieHeader);
-                }
+                logger.info("Added cross-domain Set-Cookie headers");
 
-                // Add CORS headers explicitly for this response
+                // Add comprehensive CORS headers for this specific response
                 response.setHeader("Access-Control-Allow-Origin", frontendUrl);
                 response.setHeader("Access-Control-Allow-Credentials", "true");
-                response.setHeader("Access-Control-Expose-Headers", "Set-Cookie, Authorization");
+                response.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
+                response.setHeader("Access-Control-Allow-Headers", "Origin,Content-Type,Accept,Authorization,Cookie,Set-Cookie");
+                response.setHeader("Access-Control-Expose-Headers", "Set-Cookie,Authorization,X-Auth-Token,Access-Control-Allow-Credentials");
 
-                // Add the JWT token as a custom header as well (backup method)
+                // Add the JWT token as headers (backup methods for frontend)
                 response.setHeader("X-Auth-Token", jwt);
                 response.setHeader("Authorization", "Bearer " + jwt);
 
-                logger.info("Cross-domain headers and cookies added to response");
+                logger.info("Cross-domain CORS headers added to response");
                 logger.info("Frontend URL for CORS: {}", frontendUrl);
 
                 // Ensure frontend URL has trailing slash removed if present, then add /start
