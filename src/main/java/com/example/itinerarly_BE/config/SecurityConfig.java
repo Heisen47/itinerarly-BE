@@ -55,11 +55,12 @@ public class SecurityConfig {
                 .sessionManagement(session -> session
                         .sessionCreationPolicy(org.springframework.security.config.http.SessionCreationPolicy.IF_REQUIRED)
                         .maximumSessions(1)
-                        .maxSessionsPreventsLogins(false)
+                        .expiredUrl("/")
                 )
                 .authorizeHttpRequests(auth -> {
                     auth.requestMatchers("/", "/favicon.ico", "/swagger-ui/**", "/v3/api-docs/**",
-                            "/oauth2/authorization/**", "/api/v1/start", "/test", "/login/**").permitAll();
+                            "/oauth2/authorization/**", "/api/v1/start", "/test", "/login/**",
+                            "/api/v1/auth/status", "/api/v1/auth/logout").permitAll();
                     auth.requestMatchers("/api/**").authenticated();
                     auth.anyRequest().authenticated();
                 })
