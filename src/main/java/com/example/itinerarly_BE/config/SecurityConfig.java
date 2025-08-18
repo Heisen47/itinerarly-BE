@@ -153,11 +153,11 @@ public class SecurityConfig {
 
                 // Create cross-domain compatible cookies
                 Cookie authCookie = new Cookie("auth-token", jwt);
-                authCookie.setHttpOnly(false);
+                authCookie.setHttpOnly(true);
                 authCookie.setPath("/");
                 authCookie.setMaxAge(86400); // 24 hours
                 authCookie.setSecure(true);
-                authCookie.setAttribute("SameSite", "None");
+                authCookie.setAttribute("sameSite", "None");
 
                 logger.info("Cross-domain cookie configured - Name: {}, Path: {}, MaxAge: {}, HttpOnly: {}, Secure: true, SameSite: None",
                     authCookie.getName(), authCookie.getPath(), authCookie.getMaxAge(), authCookie.isHttpOnly());
