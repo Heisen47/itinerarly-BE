@@ -2,7 +2,7 @@
 
 A Spring Boot REST API backend for the Itinerarly travel planning application with OAuth2 authentication and JWT token management.
 
-## 🚀 Features
+## Features
 
 - **OAuth2 Authentication**: Google and GitHub login integration
 - **JWT Token Management**: Secure authentication with daily token limits
@@ -12,7 +12,7 @@ A Spring Boot REST API backend for the Itinerarly travel planning application wi
 - **Comprehensive Testing**: Unit tests, integration tests, and test containers
 - **Production Ready**: Health checks, monitoring, and security configurations
 
-## 🛠️ Tech Stack
+## Tech Stack
 
 - **Framework**: Spring Boot 3.4.5
 - **Java Version**: 21
@@ -23,14 +23,14 @@ A Spring Boot REST API backend for the Itinerarly travel planning application wi
 - **Testing**: JUnit 5, Mockito, TestContainers
 - **Containerization**: Docker & Docker Compose
 
-## 📋 Prerequisites
+## Prerequisites
 
 - Java 21 or higher
 - Maven 3.6+
 - Docker & OrbStack (for containerization)
 - MySQL 8.0 (for local development)
 
-## ⚙️ Environment Variables
+## Environment Variables
 
 ### Required for Production
 ```bash
@@ -67,7 +67,7 @@ MYSQL_USER=devuser
 MYSQL_PASSWORD=devpassword
 ```
 
-## 🏃‍♂️ Quick Start
+## Quick Start
 
 ### Local Development (without Docker)
 ```bash
@@ -106,7 +106,7 @@ export JWT_SECRET="your-jwt-secret"
 docker-compose -f docker-compose.prod.yml up -d
 ```
 
-## 🐳 Docker Configuration
+## Docker Configuration
 
 The project includes three Docker Compose configurations:
 
@@ -127,7 +127,7 @@ The project includes three Docker Compose configurations:
 - Suitable for staging or full local testing
 - All services in one stack
 
-## 🧪 Testing
+## Testing
 
 ### Run All Tests
 ```bash
@@ -193,7 +193,7 @@ src/test/java/
 - Debug logging for tests
 - Mock OAuth2 configuration
 
-## 🔐 Security Features
+## Security Features
 
 - **OAuth2 Integration**: Google and GitHub providers
 - **JWT Authentication**: Secure token-based auth
@@ -202,14 +202,14 @@ src/test/java/
 - **Secure Cookies**: HttpOnly, Secure, SameSite attributes
 - **Input Validation**: Request validation and sanitization
 
-## 📊 Monitoring & Health Checks
+## Monitoring & Health Checks
 
 - **Actuator Endpoints**: `/actuator/health`, `/actuator/info`, `/actuator/metrics`
 - **Database Health**: Automatic DB connection monitoring
 - **Container Health**: Docker health checks configured
 - **Application Metrics**: Performance and usage tracking
 
-## 🚨 Troubleshooting
+## Troubleshooting
 
 ### Database Connection Issues
 1. **Remote MySQL timeouts**: Check firewall and network connectivity
@@ -241,14 +241,14 @@ docker-compose down && docker-compose up --build -d
 docker system prune -a
 ```
 
-## 📈 Performance Optimization
+## Performance Optimization
 
 - **Connection Pooling**: HikariCP with optimized settings
 - **JVM Tuning**: Container-aware memory settings
 - **Database Indexing**: Optimized queries and indexes
 - **Caching**: Application-level caching for frequently accessed data
 
-## 🤝 Contributing
+## Contributing
 
 1. Fork the repository
 2. Create a feature branch (`git checkout -b feature/amazing-feature`)
@@ -256,16 +256,16 @@ docker system prune -a
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-## 📝 License
+## License
 
 This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
-## 🔗 Related Projects
+## Related Projects
 
 - [Frontend Repository](https://github.com/your-username/itinerarly-frontend)
 - [Deployment Scripts](https://github.com/your-username/itinerarly-deployment)
 
-## 📞 Support
+## Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-username/itinerarly-BE/issues)
 - **Documentation**: [API Docs](https://itinerarly-be.onrender.com/swagger-ui.html)
