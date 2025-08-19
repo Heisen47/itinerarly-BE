@@ -268,5 +268,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 - **Issues**: [GitHub Issues](https://github.com/your-username/itinerarly-BE/issues)
-- **Documentation**: [API Docs](https://itinerarly-be.onrender.com/swagger-ui.html)
 - **Live Demo**: [Frontend](https://itinerarly-fe.vercel.app)
