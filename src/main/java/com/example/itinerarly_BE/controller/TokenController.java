@@ -35,20 +35,17 @@ public class TokenController {
 
             Long userId = (Long) session.getAttribute("user_id");
             String userEmail = (String) session.getAttribute("user_email");
+            String oauthId = (String) session.getAttribute("oauth_id"); // Get oauth_id from session
 
-            if (userId == null) {
-                logger.error("User ID not found in session");
+            if (userId == null || oauthId == null) {
+                logger.error("User ID or OAuth ID not found in session");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("error", "Session data incomplete"));
             }
 
-            // For token service, we need to get the oauth ID from the user
-            // Since we're using session-based auth, we'll use the user_id as identifier
-            String oauthId = userId.toString();
+            int remainingTokens = tokenService.getRemainingTokens(oauthId); // Use oauth_id instead of user_id
 
-            int remainingTokens = tokenService.getRemainingTokens(oauthId);
-
-            logger.info("Retrieved remaining tokens for user {}: {}", userEmail, remainingTokens);
+            logger.info("Retrieved remaining tokens for user {} (OAuth ID: {}): {}", userEmail, oauthId, remainingTokens);
             return ResponseEntity.ok(Map.of(
                 "remainingTokens", remainingTokens,
                 "userId", userId,
@@ -74,19 +71,17 @@ public class TokenController {
 
             Long userId = (Long) session.getAttribute("user_id");
             String userEmail = (String) session.getAttribute("user_email");
+            String oauthId = (String) session.getAttribute("oauth_id"); // Get oauth_id from session
 
-            if (userId == null) {
-                logger.error("User ID not found in session for token consumption");
+            if (userId == null || oauthId == null) {
+                logger.error("User ID or OAuth ID not found in session for token consumption");
                 return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                         .body(Map.of("error", "Session data incomplete"));
             }
 
-            // Use user_id as identifier for token service
-            String oauthId = userId.toString();
+            logger.info("Attempting to consume token for user: {} (OAuth ID: {})", userEmail, oauthId);
 
-            logger.info("Attempting to consume token for user: {} (ID: {})", userEmail, userId);
-
-            boolean success = tokenService.consumeToken(oauthId);
+            boolean success = tokenService.consumeToken(oauthId); // Use oauth_id instead of user_id
             Map<String, Object> response = new HashMap<>();
 
             if (success) {
@@ -95,16 +90,16 @@ public class TokenController {
                 response.put("remainingTokens", remainingTokens);
                 response.put("message", "Token consumed successfully");
 
-                logger.info("Token consumed successfully for user: {} (ID: {}). Remaining tokens: {}",
-                    userEmail, userId, remainingTokens);
+                logger.info("Token consumed successfully for user: {} (OAuth ID: {}). Remaining tokens: {}",
+                    userEmail, oauthId, remainingTokens);
                 return ResponseEntity.ok(response);
             } else {
                 response.put("success", false);
                 response.put("message", "No tokens remaining for today");
                 response.put("remainingTokens", 0);
 
-                logger.warn("Token consumption failed for user: {} (ID: {}) - no tokens remaining",
-                    userEmail, userId);
+                logger.warn("Token consumption failed for user: {} (OAuth ID: {}) - no tokens remaining",
+                    userEmail, oauthId);
                 return ResponseEntity.status(HttpStatus.FORBIDDEN).body(response);
             }
         } catch (Exception e) {

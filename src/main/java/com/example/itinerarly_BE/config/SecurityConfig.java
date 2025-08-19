@@ -162,8 +162,9 @@ public class SecurityConfig {
                 request.getSession().setAttribute("user_id", savedUser.getId());
                 request.getSession().setAttribute("user_email", savedUser.getEmail());
                 request.getSession().setAttribute("user_name", savedUser.getName());
+                request.getSession().setAttribute("oauth_id", oauthId); // Add oauth_id to session
 
-                logger.info("User data stored in session. Session ID: {}", request.getSession().getId());
+                logger.info("User data stored in session. Session ID: {}, OAuth ID: {}", request.getSession().getId(), oauthId);
 
                 // Create HttpOnly JWT cookie for secure authentication
                 Cookie jwtCookie = new Cookie("auth-token", jwt);
