@@ -3,8 +3,10 @@ package com.example.itinerarly_BE.utl;
 import com.example.itinerarly_BE.repository.UserRepository;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.stereotype.Component;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.ZonedDateTime;
 
 @Component
 public class DataCleanupScheduler {
@@ -16,9 +18,10 @@ public class DataCleanupScheduler {
 
     // Runs every 3 days (259200000 ms)
     @Scheduled(fixedRate = 259200000)
+    @Transactional
     public void deleteOldData() {
-        LocalDateTime cutoff = LocalDateTime.now().minusDays(3);
-        userRepository.deleteByCreatedAtBefore(cutoff);
+        ZonedDateTime cutoff = ZonedDateTime.now(ZoneId.of("Asia/Kolkata")).minusDays(3);
+        userRepository.deleteByLoginTimeBefore(cutoff);
         System.out.println("Old data deleted before: " + cutoff);
     }
 }
