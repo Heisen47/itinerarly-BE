@@ -1,6 +1,6 @@
 # Itinerarly Backend
 
-A Spring Boot REST API backend for the Itinerarly travel planning application with OAuth2 authentication and JWT token management.
+A Spring Boot REST API backend for the Itinerarly travel planning application with OAuth2 authentication and JWT token management. I have a cron-job that deletes your data from my table after every 3 days , i won't store your data.
 
 ## Features
 
