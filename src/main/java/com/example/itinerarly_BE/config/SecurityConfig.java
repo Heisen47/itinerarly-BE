@@ -203,7 +203,7 @@ public class SecurityConfig {
                 logger.info("Session-based authentication configured - JWT stored in session, indicator cookies set");
                 logger.info("JSESSIONID will be automatically generated: {}", request.getSession().getId());
 
-                // Add comprehensive CORS headers for this specific response
+
                 response.setHeader("Access-Control-Allow-Origin", frontendUrl);
                 response.setHeader("Access-Control-Allow-Credentials", "true");
                 response.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,DELETE,OPTIONS");
