@@ -176,17 +176,16 @@ public class SecurityConfig {
 
                 response.addCookie(jwtCookie);
 
-                // Create non-HttpOnly indicator cookie for JavaScript detection
                 Cookie loginIndicator = new Cookie("isLoggedIn", "true");
-                loginIndicator.setHttpOnly(false);  // Allow JavaScript access
+                loginIndicator.setHttpOnly(false);
                 loginIndicator.setPath("/");
-                loginIndicator.setMaxAge(86400); // 24 hours
+                loginIndicator.setMaxAge(86400);
                 loginIndicator.setSecure(true);
                 loginIndicator.setAttribute("SameSite", "None");
 
                 response.addCookie(loginIndicator);
 
-                // Add user info cookie for frontend (non-sensitive data) - URL encode the JSON
+
                 String userInfoJson = String.format("{\"name\":\"%s\",\"email\":\"%s\",\"provider\":\"%s\"}",
                     savedUser.getName(), savedUser.getEmail(), savedUser.getProvider());
                 String encodedUserInfo = java.net.URLEncoder.encode(userInfoJson, java.nio.charset.StandardCharsets.UTF_8);
