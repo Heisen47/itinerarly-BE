@@ -16,7 +16,7 @@ public class DataCleanupScheduler {
         this.userRepository = userRepository;
     }
 
-    // Runs every 3 days (259200000 ms)
+
     @Scheduled(fixedRate = 259200000)
     @Transactional
     public void deleteOldData() {
