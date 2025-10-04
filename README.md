@@ -262,10 +262,9 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Related Projects
 
-- [Frontend Repository](https://github.com/your-username/itinerarly-frontend)
-- [Deployment Scripts](https://github.com/your-username/itinerarly-deployment)
+- [Frontend Repository](https://github.com/Heisen47/itinerarly)
 
 ## Support
 
-- **Issues**: [GitHub Issues](https://github.com/your-username/itinerarly-BE/issues)
+- **Issues**: [GitHub Issues](https://github.com/Heisen47/itinerarly-BE/issues)
 - **Live Demo**: [Frontend](https://itinerarly-fe.vercel.app)
